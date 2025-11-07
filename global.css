@@ -9,4 +9,5 @@
 
 .move {
     cursor: move;
+    position: absolute
 }

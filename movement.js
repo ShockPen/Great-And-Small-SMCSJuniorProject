@@ -1,6 +1,11 @@
 
-dragElement(document.getElementById("Moveable"));
-
+elemt = document.getElementsByClassName("move");
+//console.log(elemt);
+for (elm of elemt) {
+    //dragElement(elm);
+    elm.addEventListener("mousedown", MouseDown);
+    //console.log(elm);
+}
 function dragElement(elem) {
     var x1 = 0; y1 = 0; x2 = 0, y2 = 0;
     elem.onmousedown = MouseDown;
@@ -12,7 +17,9 @@ function closeDragElement() {
   }
 
 function MouseDown(e) {
+    //console.log(elmn);
     e = e || window.event;
+    console.log(e);
     e.preventDefault();
     x2 = e.clientX;
     y2 = e.clientY;
@@ -21,13 +28,16 @@ function MouseDown(e) {
 }
 
 function moveElement(e) {
-    e = e || window.event;
+    e = e||window.event;
     e.preventDefault();
     x1 = x2 - e.clientX;
     y1 = y2 - e.clientY;
     x2 = e.clientX;
     y2 = e.clientY;
-    elem.style.top = (elmnt.offsetTop + y1) + "px";
-    elem.style.left = (elmnt.offsetLeft + x1) + "px";
+    var er = document.getElementById(e.target.id); 
+    console.log(er);
+    er.style.top = Math.abs((er.offsetTop - y1)) + "px";
+    er.style.left = Math.abs((er.offsetLeft - x1)) + "px";
+
 }
     
