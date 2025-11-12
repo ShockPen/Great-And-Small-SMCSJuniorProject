@@ -9,7 +9,19 @@
 <body>
     Hello there
 </body>
-<div class="canvas">
+<button onclick="addMove()" class = "button">Click</button>
+<div id="canvas" class="canvas">
+    <script>
+        function addCode() {
+            alert('adding');
+            document.getElementById("canvas")
+                .innerHTML +=
+                `<h3>
+                    This is the text which has
+                    been inserted by JS
+            </h3>`;
+        }
+    </script>
     <div class= "move" id="Moveable">
         Move
     </div>

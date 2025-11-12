@@ -9,5 +9,15 @@
 
 .move {
     cursor: move;
-    position: absolute
+    position: absolute;
+    height: 2cm;
+    width:2cm;
+    display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.button{
+    background-color: rgb(67, 67, 240);
+    color:white;
+    border-radius: 10px;
 }
