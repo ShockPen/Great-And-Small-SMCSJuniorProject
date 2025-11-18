@@ -4,15 +4,24 @@ body,html {
     padding: 0px;
     margin: 0px;
 }
+body,html {
+    height: 100%;
+    width: 100%;
+    padding: 0px;
+    margin: 0px;
+}
 .canvas {
     color:blue;
     border: 1px solid black;
     border-radius: 10px;
     width: 90%; 
    
+    width: 90%; 
+   
 }
 
 .move {
+    background-color: aliceblue;
     background-color: aliceblue;
     cursor: move;
     position: absolute;
@@ -22,7 +31,11 @@ body,html {
     justify-content: center;
     align-items: center;
    
+    justify-content: center;
+    align-items: center;
+   
 }
+
 
 .button{
     background-color: rgb(255, 255, 255);
