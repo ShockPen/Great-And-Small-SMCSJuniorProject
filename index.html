@@ -7,27 +7,29 @@
     <title>Mint</title>
 </head>
 <body>
-    Hello there
 </body>
-<button onclick="addMove()" class = "button">Click</button>
-<div id="canvas" class="canvas">
-    <script>
-        function addCode() {
-            alert('adding');
-            document.getElementById("canvas")
-                .innerHTML +=
-                `<h3>
-                    This is the text which has
-                    been inserted by JS
-            </h3>`;
-        }
-    </script>
+<div style="display: flex; flex-direction: row; gap: 10pt; height:100%; overflow-y: hidden;">
+    <div class ="sidebar">
+        <header> Images</header>
+        <div class="menu">
+            <button class = "button" id="button1" style="background-image: url(./images/horse.jpg)" ;></button>
+            <button class = "button" id="button2"><img src="./images/horse.jpg" style="width:100px;height:80px;"></button>
+       
+        </div>
+        <footer>Footer</footer>
+    </div>
+
+    <div id="canvas" class="canvas">
+
     <div class= "move" id="Moveable">
         Move
     </div>
     <div class= "move" id="Moveable2" >
-        Move223423
+        <img src="/images/horse.jpg" style="width:1px;height:8px;">
+    </div>
+    
     </div>
 </div>
 <script src="movement.js"></script>
+<script src="buttons.js"></script>
 </html>

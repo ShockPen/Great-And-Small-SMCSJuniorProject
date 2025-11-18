@@ -1,8 +1,34 @@
-onload = (e)=>{
-    yippie();
+var count = 3;
+var count2 = 4;
+
+const buttons = document.getElementsByClassName("button")
+
+for(let but of buttons){
+
+    but.addEventListener('click', addMove)
+    
 }
 
-function yippie(){
+function addMove(e) {
+    element = document.getElementById("canvas");
+    console.log(window.getComputedStyle(event.target).backgroundImage);
+    let image = window.getComputedStyle(event.target).backgroundImage.slice(4, -1);
+    
+    document.getElementById("canvas")
+                .innerHTML +=
+                `<div class="move" id="Moveable`+count+`">
+                     <img src= ${image} id="Moveable`+count2+ `"> 
+            </div>`;
+    yip()
+    count = count + 2;
+    count2 = count + 2;
+   
+    console.log(element.getElementsByTagName('img'))
+
+
+}
+
+function yip(){
     let btns = document.querySelectorAll('.move') ;
     
     for (let b of btns) {
@@ -26,7 +52,7 @@ function yippie(){
                 let domRect = cv.getBoundingClientRect();
                 let newPositionX = e.clientX - offsetX; 
                 let newPositionY = e.clientY - offsetY; 
-                 theBtn.style.top = `${clamp(newPositionY, domRect.top, domRect.bottom-(Math.abs(b.getBoundingClientRect().top-b.getBoundingClientRect().bottom)))}px`;
+                theBtn.style.top = `${clamp(newPositionY, domRect.top, domRect.bottom-(Math.abs(b.getBoundingClientRect().top-b.getBoundingClientRect().bottom)))}px`;
                 theBtn.style.left = `${clamp(newPositionX, domRect.left, domRect.right-(Math.abs(b.getBoundingClientRect().left-b.getBoundingClientRect().right)))}px`;
                 window.addEventListener('mouseup', (e)=>{
                     this.window.removeEventListener('mousemove', _ref);
@@ -36,4 +62,3 @@ function yippie(){
         }
     }
 }
-
