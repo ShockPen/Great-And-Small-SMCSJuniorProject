@@ -1,12 +1,27 @@
 var count = 3;
 var count2 = 4;
+var canRemove = false;
 
-const buttons = document.getElementsByClassName("button")
+const buttons = document.getElementsByClassName("button");
+const rem = document.getElementById("rm");
+rem.addEventListener("click", function() {
+    if (!canRemove){
+    canRemove = true;
+    rem.style.backgroundColor = "red";
+    rem.style.color = "white";
+    rem.textContent = "Removing on";
+    unyip();
+    }else{
+        canRemove = false;
+        rem.style.backgroundColor = "white";
+        rem.style.color = "red";
+        rem.textContent = "Remove image";
+        yip();
+    }
+});
 
 for(let but of buttons){
-
     but.addEventListener('click', addMove)
-    
 }
 
 function addMove(e) {
@@ -61,4 +76,19 @@ function yip(){
             })
         }
     }
+}
+
+function unyip() {
+    if (canRemove){
+        let btns = document.querySelectorAll('.move') ;
+    
+    for (let b of btns) {
+        let theBtn = /** @type {HTMLButtonElement} */ (b);
+
+        theBtn.onmousedown = (e) => {
+            e.preventDefault();
+            theBtn.remove();
+        }
+    }
+}
 }
