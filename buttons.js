@@ -4,6 +4,13 @@ var canRemove = false;
 
 const buttons = document.getElementsByClassName("button");
 const rem = document.getElementById("rm");
+const clear = document.getElementById("cl");
+clear.addEventListener("click", function() {
+    let btns = document.querySelectorAll('.move')
+    for (let b of btns) {
+        b.remove();
+    }
+});
 rem.addEventListener("click", function() {
     if (!canRemove){
     canRemove = true;
@@ -89,8 +96,5 @@ function unyip() {
             theBtn.remove();
         }
     }
-}
-function playSound() {
-
 }
 }
