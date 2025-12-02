@@ -39,8 +39,8 @@ function addMove(e) {
     document.getElementById("canvas")
                 .innerHTML +=
                 `<div class="move" id="Moveable`+count+`">
-                     <img src= ${image} id="Moveable`+count2+`">
-                     <button class="sound" id="sound`+count+`"></button> 
+                     <img class = "butimg" src= ${image} id="Moveable`+count2+`">
+                     <button class="sound"  id="sound`+count+`" style="background-image: url(./images/sound.png)"></button> 
             </div>`;
     yip()
     count = count + 2;
@@ -96,5 +96,8 @@ function unyip() {
             theBtn.remove();
         }
     }
+}
+function addSound() {
+    
 }
 }
