@@ -7,14 +7,14 @@ const rem = document.getElementById("rm");
 rem.addEventListener("click", function() {
     if (!canRemove){
     canRemove = true;
-    rem.style.backgroundColor = "red";
+    rem.style.backgroundColor = "rgb(255, 92, 92)";
     rem.style.color = "white";
     rem.textContent = "Removing on";
     unyip();
     }else{
         canRemove = false;
         rem.style.backgroundColor = "white";
-        rem.style.color = "red";
+        rem.style.color = "rgb(255, 92, 92)";
         rem.textContent = "Remove image";
         yip();
     }
@@ -32,15 +32,14 @@ function addMove(e) {
     document.getElementById("canvas")
                 .innerHTML +=
                 `<div class="move" id="Moveable`+count+`">
-                     <img src= ${image} id="Moveable`+count2+ `"> 
+                     <img src= ${image} id="Moveable`+count2+`">
+                     <button class="sound" id="sound`+count+`"></button> 
             </div>`;
     yip()
     count = count + 2;
     count2 = count + 2;
    
     console.log(element.getElementsByTagName('img'))
-
-
 }
 
 function yip(){
@@ -90,5 +89,8 @@ function unyip() {
             theBtn.remove();
         }
     }
+}
+function playSound() {
+
 }
 }

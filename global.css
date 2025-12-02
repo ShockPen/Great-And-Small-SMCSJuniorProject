@@ -60,6 +60,8 @@ body,html {
     padding-top: 20px;
     display: flex;
     flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 img{
    max-width: 100%;
@@ -85,7 +87,16 @@ img{
 }
 
 .remove{
-    color:red;
+    color:rgb(255, 92, 92);
     background-color:white;
-    height: 50px;
+    height: 30px;
+    width: 120px;
+    border-radius: 5px;
+}
+
+.sound{
+    color:gray;
+    background-color: gray;
+    height: 10px;
+    width: 10px;
 }
