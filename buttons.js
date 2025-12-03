@@ -1,5 +1,4 @@
-var count = 3;
-var count2 = 4;
+var count = 1;
 var canRemove = false;
 
 const buttons = document.getElementsByClassName("button");
@@ -31,21 +30,39 @@ for(let but of buttons){
     but.addEventListener('click', addMove)
 }
 
+document.getElementById('canvas').addEventListener('pointerdown', (e) => {
+    if (e.target.classList.contains('sound')) {
+        e.stopPropagation();
+        let parent = e.target.closest(".move");
+        if (!parent) return;
+
+        let bg = window.getComputedStyle(parent).backgroundImage;
+        let match = bg.match(/url\(["']?(.*?)["']?\)/);
+        if (!match) return;
+
+        let imgPath = match[1];
+        let baseName = imgPath.split("/").pop().replace(/\.[^.]+$/, "");
+        let audioPath = `./audio/${baseName}.mp3`;
+
+        new Audio(audioPath).play();
+    }
+});
+
 function addMove(e) {
     element = document.getElementById("canvas");
     console.log(window.getComputedStyle(event.target).backgroundImage);
-    let image = window.getComputedStyle(event.target).backgroundImage.slice(4, -1);
+    let image = window.getComputedStyle(event.target).backgroundImage.slice(5, -2);
     
     document.getElementById("canvas")
                 .innerHTML +=
-                `<div class="move" id="Moveable`+count+`">
-                     <img class = "butimg" src= ${image} id="Moveable`+count2+`">
+                ` <div class="move" id="Moveable${count}" style="background-image: url('${image}')">
                      <button class="sound"  id="sound`+count+`" style="background-image: url(./images/sound.png)"></button> 
-            </div>`;
+                </div>`;
+
+    
     yip()
-    count = count + 2;
-    count2 = count + 2;
-   
+
+    count = count + 1;
     console.log(element.getElementsByTagName('img'))
 }
 
@@ -56,6 +73,9 @@ function yip(){
         let theBtn = /** @type {HTMLButtonElement} */ (b);
 
         theBtn.onmousedown = (e) => {
+             if (e.target.classList.contains("sound")) {
+             return; 
+             }       
             e.preventDefault();
             let offsetX = e.offsetX;
             let offsetY = e.offsetY;
@@ -96,8 +116,5 @@ function unyip() {
             theBtn.remove();
         }
     }
-}
-function addSound() {
-    
 }
 }

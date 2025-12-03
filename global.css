@@ -30,9 +30,9 @@ body,html {
     display: flex;
     justify-content: center;
     align-items: center;
-   
     justify-content: center;
     align-items: center;
+    background-size: 100% 100%;
    
 }
 
