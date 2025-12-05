@@ -12,11 +12,11 @@ init();
 function init() {
     clearBtn.addEventListener("click", clearAll);
     removeBtn.addEventListener("click", toggleRemoveMode);
-    
+
     for (let button of buttons) {
         button.addEventListener('click', () => addImageToCanvas(button));
     }
-    
+
     canvas.addEventListener('pointerdown', handleSoundButton);
 }
 
@@ -33,33 +33,33 @@ function toggleRemoveMode() {
 function addImageToCanvas(button) {
     const bgImage = window.getComputedStyle(button).backgroundImage;
     const imageUrl = bgImage.slice(5, -2);
-    
+
     const moveDiv = document.createElement('div');
     moveDiv.className = 'move';
     moveDiv.id = `Moveable${count}`;
     moveDiv.style.backgroundImage = `url('${imageUrl}')`;
-    
+
     const canvasRect = canvas.getBoundingClientRect();
     moveDiv.style.left = `${canvasRect.width / 2 - 100}px`;
     moveDiv.style.top = `${canvasRect.height / 2 - 75}px`;
-    
+
     const soundBtn = document.createElement('button');
     soundBtn.className = 'sound';
     soundBtn.id = `sound${count}`;
     soundBtn.style.backgroundImage = 'url(./images/sound.png)';
     soundBtn.setAttribute('data-image-url', imageUrl);
-    
+
     moveDiv.appendChild(soundBtn);
     canvas.appendChild(moveDiv);
-    
+
     setupImageBehavior(moveDiv);
-    
+
     count++;
 }
 
 function setupImageBehavior(element) {
     element.onpointerdown = null;
-    
+
     if (removeMode) {
         element.classList.remove('drag-mode');
         element.classList.add('remove-mode');
@@ -85,55 +85,55 @@ function startDrag(e, element) {
     if (e.target.classList.contains('sound')) {
         return;
     }
-    
+
     e.preventDefault();
-    
+
     document.body.style.overflow = 'hidden';
     document.body.style.touchAction = 'none';
-    
+
     element.setPointerCapture(e.pointerId);
     activeElement = element;
-    
+
     const rect = element.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
-    
+
     element.classList.add('dragging');
-    
+
     function onMove(e) {
         if (!activeElement) return;
-        
+
         e.preventDefault();
-        
+
         const canvasRect = canvas.getBoundingClientRect();
         const elemRect = element.getBoundingClientRect();
-        
+
         let newX = e.clientX - offsetX - canvasRect.left;
         let newY = e.clientY - offsetY - canvasRect.top;
-        
+
         newX = Math.max(0, Math.min(newX, canvasRect.width - elemRect.width));
         newY = Math.max(0, Math.min(newY, canvasRect.height - elemRect.height));
-        
+
         element.style.left = `${newX}px`;
         element.style.top = `${newY}px`;
     }
-    
+
     function onEnd(e) {
         if (!activeElement) return;
-        
+
         element.releasePointerCapture(e.pointerId);
-        
+
         element.classList.remove('dragging');
-        
+
         document.body.style.overflow = '';
         document.body.style.touchAction = '';
-        
+
         element.removeEventListener('pointermove', onMove);
         element.removeEventListener('pointerup', onEnd);
         element.removeEventListener('pointercancel', onEnd);
         activeElement = null;
     }
-    
+
     element.addEventListener('pointermove', onMove);
     element.addEventListener('pointerup', onEnd);
     element.addEventListener('pointercancel', onEnd);
@@ -141,21 +141,16 @@ function startDrag(e, element) {
 
 function handleSoundButton(e) {
     if (!e.target.classList.contains('sound')) return;
-    
+
     e.preventDefault();
     e.stopPropagation();
-    
+
     const imageUrl = e.target.getAttribute('data-image-url');
     if (!imageUrl) return;
-    
+
     const filename = imageUrl.split('/').pop().replace(/\.[^.]+$/, '');
     const audioPath = `./audio/${filename}.mp3`;
-    
-    e.target.style.opacity = '0.5';
-    setTimeout(() => {
-        e.target.style.opacity = '1';
-    }, 150);
-    
+
     const audio = new Audio(audioPath);
     audio.play().catch(err => console.log('Audio playback failed:', err));
 }
