@@ -1,120 +1,156 @@
-var count = 1;
-var canRemove = false;
+let count = 1;
+let removeMode = false;
+let activeElement = null;
 
 const buttons = document.getElementsByClassName("button");
-const rem = document.getElementById("rm");
-const clear = document.getElementById("cl");
-clear.addEventListener("click", function() {
-    let btns = document.querySelectorAll('.move')
-    for (let b of btns) {
-        b.remove();
-    }
-});
-rem.addEventListener("click", function() {
-    if (!canRemove){
-    canRemove = true;
-    rem.style.backgroundColor = "rgb(255, 92, 92)";
-    rem.style.color = "white";
-    rem.textContent = "Removing on";
-    unyip();
-    }else{
-        canRemove = false;
-        rem.style.backgroundColor = "white";
-        rem.style.color = "rgb(255, 92, 92)";
-        rem.textContent = "Remove image";
-        yip();
-    }
-});
+const removeBtn = document.getElementById("rm");
+const clearBtn = document.getElementById("cl");
+const canvas = document.getElementById("canvas");
 
-for(let but of buttons){
-    but.addEventListener('click', addMove)
+init();
+
+function init() {
+    clearBtn.addEventListener("click", clearAll);
+    removeBtn.addEventListener("click", toggleRemoveMode);
+
+    for (let button of buttons) {
+        button.addEventListener('click', () => addImageToCanvas(button));
+    }
+
+    canvas.addEventListener('pointerdown', handleSoundButton);
 }
 
-document.getElementById('canvas').addEventListener('pointerdown', (e) => {
-    if (e.target.classList.contains('sound')) {
-        e.stopPropagation();
-        let parent = e.target.closest(".move");
-        if (!parent) return;
-
-        let bg = window.getComputedStyle(parent).backgroundImage;
-        let match = bg.match(/url\(["']?(.*?)["']?\)/);
-        if (!match) return;
-
-        let imgPath = match[1];
-        let baseName = imgPath.split("/").pop().replace(/\.[^.]+$/, "");
-        let audioPath = `./audio/${baseName}.mp3`;
-
-        new Audio(audioPath).play();
-    }
-});
-
-function addMove(e) {
-    element = document.getElementById("canvas");
-    console.log(window.getComputedStyle(event.target).backgroundImage);
-    let image = window.getComputedStyle(event.target).backgroundImage.slice(5, -2);
-    
-    document.getElementById("canvas")
-                .innerHTML +=
-                ` <div class="move" id="Moveable${count}" style="background-image: url('${image}')">
-                     <button class="sound"  id="sound`+count+`" style="background-image: url(./images/sound.png)"></button> 
-                </div>`;
-
-    
-    yip()
-
-    count = count + 1;
-    console.log(element.getElementsByTagName('img'))
+function clearAll() {
+    const images = canvas.querySelectorAll('.move');
+    images.forEach(img => img.remove());
 }
 
-function yip(){
-    let btns = document.querySelectorAll('.move') ;
-    
-    for (let b of btns) {
-        let theBtn = /** @type {HTMLButtonElement} */ (b);
+function toggleRemoveMode() {
+    removeMode = !removeMode;
+    updateAllImageBehaviors();
+}
 
-        theBtn.onmousedown = (e) => {
-             if (e.target.classList.contains("sound")) {
-             return; 
-             }       
-            e.preventDefault();
-            let offsetX = e.offsetX;
-            let offsetY = e.offsetY;
-            window.addEventListener('mousemove', function _ref(e){
+function addImageToCanvas(button) {
+    const bgImage = window.getComputedStyle(button).backgroundImage;
+    const imageUrl = bgImage.slice(5, -2);
+
+    const moveDiv = document.createElement('div');
+    moveDiv.className = 'move';
+    moveDiv.id = `Moveable${count}`;
+    moveDiv.style.backgroundImage = `url('${imageUrl}')`;
+
+    const canvasRect = canvas.getBoundingClientRect();
+    moveDiv.style.left = `${canvasRect.width / 2 - 100}px`;
+    moveDiv.style.top = `${canvasRect.height / 2 - 75}px`;
+
+    const soundBtn = document.createElement('button');
+    soundBtn.className = 'sound';
+    soundBtn.id = `sound${count}`;
+    soundBtn.style.backgroundImage = 'url(./images/sound.png)';
+    soundBtn.setAttribute('data-image-url', imageUrl);
+
+    moveDiv.appendChild(soundBtn);
+    canvas.appendChild(moveDiv);
+
+    setupImageBehavior(moveDiv);
+
+    count++;
+}
+
+function setupImageBehavior(element) {
+    element.onpointerdown = null;
+
+    if (removeMode) {
+        element.classList.remove('drag-mode');
+        element.classList.add('remove-mode');
+        element.onpointerdown = (e) => {
+            if (!e.target.classList.contains('sound')) {
                 e.preventDefault();
-                function clamp(x, xMin, xMax) {
-                    if (x < xMin)
-                        return xMin;
-                    if (x > xMax) {
-                        return xMax;
-                    }
-                    return x;
-                }
-                let cv =  /** @type {HTMLDivElement} */ (document.querySelector('.canvas'))
-                let domRect = cv.getBoundingClientRect();
-                let newPositionX = e.clientX - offsetX; 
-                let newPositionY = e.clientY - offsetY; 
-                theBtn.style.top = `${clamp(newPositionY, domRect.top, domRect.bottom-(Math.abs(b.getBoundingClientRect().top-b.getBoundingClientRect().bottom)))}px`;
-                theBtn.style.left = `${clamp(newPositionX, domRect.left, domRect.right-(Math.abs(b.getBoundingClientRect().left-b.getBoundingClientRect().right)))}px`;
-                window.addEventListener('mouseup', (e)=>{
-                    this.window.removeEventListener('mousemove', _ref);
-                    
-                })
-            })
-        }
+                element.remove();
+            }
+        };
+    } else {
+        element.classList.remove('remove-mode');
+        element.classList.add('drag-mode');
+        element.onpointerdown = (e) => startDrag(e, element);
     }
 }
 
-function unyip() {
-    if (canRemove){
-        let btns = document.querySelectorAll('.move') ;
-    
-    for (let b of btns) {
-        let theBtn = /** @type {HTMLButtonElement} */ (b);
-
-        theBtn.onmousedown = (e) => {
-            e.preventDefault();
-            theBtn.remove();
-        }
-    }
+function updateAllImageBehaviors() {
+    const images = canvas.querySelectorAll('.move');
+    images.forEach(img => setupImageBehavior(img));
 }
+
+function startDrag(e, element) {
+    if (e.target.classList.contains('sound')) {
+        return;
+    }
+
+    e.preventDefault();
+
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+
+    element.setPointerCapture(e.pointerId);
+    activeElement = element;
+
+    const rect = element.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const offsetY = e.clientY - rect.top;
+
+    element.classList.add('dragging');
+
+    function onMove(e) {
+        if (!activeElement) return;
+
+        e.preventDefault();
+
+        const canvasRect = canvas.getBoundingClientRect();
+        const elemRect = element.getBoundingClientRect();
+
+        let newX = e.clientX - offsetX - canvasRect.left;
+        let newY = e.clientY - offsetY - canvasRect.top;
+
+        newX = Math.max(0, Math.min(newX, canvasRect.width - elemRect.width));
+        newY = Math.max(0, Math.min(newY, canvasRect.height - elemRect.height));
+
+        element.style.left = `${newX}px`;
+        element.style.top = `${newY}px`;
+    }
+
+    function onEnd(e) {
+        if (!activeElement) return;
+
+        element.releasePointerCapture(e.pointerId);
+
+        element.classList.remove('dragging');
+
+        document.body.style.overflow = '';
+        document.body.style.touchAction = '';
+
+        element.removeEventListener('pointermove', onMove);
+        element.removeEventListener('pointerup', onEnd);
+        element.removeEventListener('pointercancel', onEnd);
+        activeElement = null;
+    }
+
+    element.addEventListener('pointermove', onMove);
+    element.addEventListener('pointerup', onEnd);
+    element.addEventListener('pointercancel', onEnd);
+}
+
+function handleSoundButton(e) {
+    if (!e.target.classList.contains('sound')) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const imageUrl = e.target.getAttribute('data-image-url');
+    if (!imageUrl) return;
+
+    const filename = imageUrl.split('/').pop().replace(/\.[^.]+$/, '');
+    const audioPath = `./audio/${filename}.mp3`;
+
+    const audio = new Audio(audioPath);
+    audio.play().catch(err => console.log('Audio playback failed:', err));
 }
