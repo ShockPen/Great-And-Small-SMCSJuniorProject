@@ -7,6 +7,10 @@ const removeBtn = document.getElementById("rm");
 const clearBtn = document.getElementById("cl");
 const canvas = document.getElementById("canvas");
 
+const BUTTON_ANIMATION_STYLING = ['duration-100', 'h-[165px]', 'w-[220px]', 'transition-all', 'ease-in-out'];
+const REMOVE_IMAGE_BUTTON_ANIMATION = ['bg-red-600', 'text-white', 'duration-100', 'east-in-out', 'transition-all'];
+
+
 init();
 
 function init() {
@@ -27,17 +31,21 @@ function clearAll() {
 
 function toggleRemoveMode() {
     removeMode = !removeMode;
+    if (removeMode) {
+        removeBtn.classList.add(...REMOVE_IMAGE_BUTTON_ANIMATION);
+    } else {
+        removeBtn.classList.remove(...REMOVE_IMAGE_BUTTON_ANIMATION);
+    }
     updateAllImageBehaviors();
 }
 
 function addImageToCanvas(button) {
-    const bgImage = window.getComputedStyle(button).backgroundImage;
-    const imageUrl = bgImage.slice(5, -2);
+    const bgImage = button.children[0].src;
+    const imageUrl = bgImage;
 
     const moveDiv = document.createElement('div');
-    moveDiv.className = 'move';
+    moveDiv.className = 'move rounded-[30px] border-[3px]';
     moveDiv.id = `Moveable${count}`;
-    moveDiv.style.backgroundImage = `url('${imageUrl}')`;
 
     const canvasRect = canvas.getBoundingClientRect();
     moveDiv.style.left = `${canvasRect.width / 2 - 100}px`;
@@ -49,7 +57,13 @@ function addImageToCanvas(button) {
     soundBtn.style.backgroundImage = 'url(./images/sound.png)';
     soundBtn.setAttribute('data-image-url', imageUrl);
 
+    const objectImg = document.createElement('img');
+    objectImg.src = imageUrl;
+    objectImg.classList = "justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]";
+    console.log(objectImg.classList)
+
     moveDiv.appendChild(soundBtn);
+    moveDiv.appendChild(objectImg);
     canvas.appendChild(moveDiv);
 
     setupImageBehavior(moveDiv);
@@ -82,6 +96,7 @@ function updateAllImageBehaviors() {
 }
 
 function startDrag(e, element) {
+
     if (e.target.classList.contains('sound')) {
         return;
     }
@@ -98,7 +113,7 @@ function startDrag(e, element) {
     const offsetX = e.clientX - rect.left;
     const offsetY = e.clientY - rect.top;
 
-    element.classList.add('dragging');
+    element.classList.add(...BUTTON_ANIMATION_STYLING);
 
     function onMove(e) {
         if (!activeElement) return;
@@ -116,6 +131,8 @@ function startDrag(e, element) {
 
         element.style.left = `${newX}px`;
         element.style.top = `${newY}px`;
+
+        
     }
 
     function onEnd(e) {
@@ -123,7 +140,7 @@ function startDrag(e, element) {
 
         element.releasePointerCapture(e.pointerId);
 
-        element.classList.remove('dragging');
+        element.classList.remove(...BUTTON_ANIMATION_STYLING);
 
         document.body.style.overflow = '';
         document.body.style.touchAction = '';

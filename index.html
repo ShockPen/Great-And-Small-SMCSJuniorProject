@@ -6,6 +6,7 @@
     <title>Mint</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="global.css">
+    <link href="" rel="icon">
 </head>
 <body class="h-full w-full p-0 m-0 overflow-hidden">
     <header class="w-full h-[50px] text-yellow-100 bg-[rgb(4,4,73)] flex items-center px-4">Images</header>
@@ -16,13 +17,15 @@
             <button class="remove text-[rgb(255,92,92)] bg-white h-[30px] w-[120px] rounded-[5px]" id="cl">Clear All</button>
             
             <div class="menu max-h-full flex-grow overflow-y-scroll">
-                <button class="button bg-[rgb(53,53,240)] text-black rounded-[10px] w-[200px] h-[150px] overflow-hidden bg-cover bg-center" id="button1" style="background-image: url(./images/horse.jpg)"></button>
-                <button class="button bg-[rgb(53,53,240)] text-black rounded-[10px] w-[200px] h-[150px] overflow-hidden bg-cover bg-center" id="button2">
-                    <img src="./images/horse.jpg" class="max-w-full max-h-full" style="width:100px;height:80px;">
-                </button>
-                <button class="button bg-[rgb(53,53,240)] text-black rounded-[10px] w-[200px] h-[150px] overflow-hidden bg-cover bg-center" id="button3" style="background-image: url(./images/kid.png)"></button>
+                <table>
+                    <tr class="h-[50px]"><button class="button" id="button1">
+                        <img src="./images/horse.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
+                    </button></tr>
+                    <tr class="h-[50px]"><button class="button" id="button2">
+                        <img src="./images/kid.png" class="bg-[rgb(53,53,240)] text-black rounded-[10px] w-[200px] h-[150px]"/>
+                    </button></tr>
+                </table>
             </div>
-            
             <footer class="footer w-full h-[50px] bg-[rgb(4,4,73)]"></footer>
         </div>
 
