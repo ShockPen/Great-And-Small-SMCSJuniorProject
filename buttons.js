@@ -7,7 +7,7 @@ const removeBtn = document.getElementById("rm");
 const clearBtn = document.getElementById("cl");
 const canvas = document.getElementById("canvas");
 
-const BUTTON_ANIMATION_STYLING = ['duration-100', 'h-[165px]', 'w-[220px]', 'transition-all', 'ease-in-out'];
+const BUTTON_ANIMATION_STYLING = ['h-[165px]', 'w-[220px]'];
 const REMOVE_IMAGE_BUTTON_ANIMATION = ['bg-red-600', 'text-white', 'duration-100', 'east-in-out', 'transition-all'];
 
 
@@ -22,6 +22,7 @@ function init() {
     }
 
     canvas.addEventListener('pointerdown', handleSoundButton);
+    handledropdown()
 }
 
 function clearAll() {
@@ -170,4 +171,21 @@ function handleSoundButton(e) {
 
     const audio = new Audio(audioPath);
     audio.play().catch(err => console.log('Audio playback failed:', err));
+}
+
+function handledropdown(){
+    var dropdown = document.getElementsByClassName("dropdown");
+    var i;
+
+    for (i = 0; i < dropdown.length; i++) {
+    dropdown[i].addEventListener("pointerdown", function() {
+        var dropdownContent = this.nextElementSibling;
+        if (dropdownContent.style.display === "flex") {
+        dropdownContent.style.display = "none";
+        } else {
+        dropdownContent.style.display = "flex";
+        }
+    });
+}
+
 }
