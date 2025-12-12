@@ -49,7 +49,19 @@ function addImageToCanvas(button) {
     soundBtn.style.backgroundImage = 'url(./images/sound.png)';
     soundBtn.setAttribute('data-image-url', imageUrl);
 
-    moveDiv.appendChild(soundBtn);
+    if (button.id==="buttoncustom"){
+        const textfield = document.createElement('textarea');
+        textfield.className = 'customtext';
+        textfield.id = 'textinp';
+        textfield.type = 'text';
+        textfield.name = 'custom';
+        //textfield.classList.add(['color-black-800','h-[50px]']);
+        textfield.style = 'height: 100px; width: 160px; text-align: center; text-justify: center; font-size: 32px';
+        moveDiv.appendChild(textfield);;
+    }
+    if (button.id!="buttoncustom"){
+        moveDiv.appendChild(soundBtn);
+    }
     canvas.appendChild(moveDiv);
 
     setupImageBehavior(moveDiv);
@@ -83,6 +95,9 @@ function updateAllImageBehaviors() {
 
 function startDrag(e, element) {
     if (e.target.classList.contains('sound')) {
+        return;
+    }
+    if (e.target.classList.contains('customtext')) {
         return;
     }
 
