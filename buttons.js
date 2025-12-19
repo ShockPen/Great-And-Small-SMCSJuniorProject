@@ -62,9 +62,21 @@ function addImageToCanvas(button) {
     objectImg.src = imageUrl;
     objectImg.classList = "justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]";
     console.log(objectImg.classList)
-
-    moveDiv.appendChild(soundBtn);
+  
     moveDiv.appendChild(objectImg);
+    if (button.id==="buttoncustom"){
+        const textfield = document.createElement('textarea');
+        textfield.className = 'customtext';
+        textfield.id = 'textinp';
+        textfield.type = 'text';
+        textfield.name = 'custom';
+        //textfield.classList.add(['color-black-800','h-[50px]']);
+        textfield.style = 'height: 100px; width: 160px; text-align: center; text-justify: center; font-size: 32px';
+        moveDiv.appendChild(textfield);;
+    }
+    if (button.id!="buttoncustom"){
+        moveDiv.appendChild(soundBtn);
+    }
     canvas.appendChild(moveDiv);
 
     setupImageBehavior(moveDiv);
@@ -99,6 +111,9 @@ function updateAllImageBehaviors() {
 function startDrag(e, element) {
 
     if (e.target.classList.contains('sound')) {
+        return;
+    }
+    if (e.target.classList.contains('customtext')) {
         return;
     }
 
