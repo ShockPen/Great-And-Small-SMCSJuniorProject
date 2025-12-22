@@ -41,9 +41,10 @@ function toggleRemoveMode() {
 }
 
 function addImageToCanvas(button) {
-    const bgImage = button.children[0].src;
-    const imageUrl = bgImage;
-
+    if (button.id!="buttoncustom") {
+        const bgImage = button.children[0].src;
+        var imageUrl = bgImage;
+    }
     const moveDiv = document.createElement('div');
     moveDiv.className = 'move rounded-[30px] border-[3px]';
     moveDiv.id = `Moveable${count}`;
@@ -56,14 +57,14 @@ function addImageToCanvas(button) {
     soundBtn.className = 'sound';
     soundBtn.id = `sound${count}`;
     soundBtn.style.backgroundImage = 'url(./images/sound.png)';
+        if (button.id!="buttoncustom") {
     soundBtn.setAttribute('data-image-url', imageUrl);
-
     const objectImg = document.createElement('img');
     objectImg.src = imageUrl;
     objectImg.classList = "justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]";
-    console.log(objectImg.classList)
-  
+    console.log(objectImg.classList);
     moveDiv.appendChild(objectImg);
+        }
     if (button.id==="buttoncustom"){
         const textfield = document.createElement('textarea');
         textfield.className = 'customtext';
