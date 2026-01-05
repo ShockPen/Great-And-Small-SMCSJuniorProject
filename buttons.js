@@ -72,12 +72,22 @@ function addImageToCanvas(button) {
         textfield.type = 'text';
         textfield.name = 'custom';
         //textfield.classList.add(['color-black-800','h-[50px]']);
-        textfield.style = 'height: 100px; width: 160px; text-align: center; text-justify: center; font-size: 32px';
-        moveDiv.appendChild(textfield);;
+        textfield.style = 'resize: both; margin: 20px; text-align: center; text-justify: center; font-size: 32px';
+        //textfield.style.pointerEvents = "none";
+        /*
+        textfield.addEventListener("dblclick", function() {
+            textfield.style.pointerEvents = "auto";
+            alert('hello');
+            textfield.focus();
+        });
+        */
+        moveDiv.appendChild(textfield);
+        moveDiv.style.flex = "auto";
     }
     if (button.id!="buttoncustom"){
         moveDiv.appendChild(soundBtn);
     }
+    moveDiv.style.touchAction = "none";
     canvas.appendChild(moveDiv);
 
     setupImageBehavior(moveDiv);
