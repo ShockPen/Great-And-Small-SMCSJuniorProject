@@ -18,7 +18,7 @@
             <button class="remove text-[rgb(255,92,92)] bg-white h-[30px] w-[120px] rounded-[5px]" id="rm">Remove Image</button>
             <button class="remove text-[rgb(255,92,92)] bg-white h-[30px] w-[120px] rounded-[5px]" id="cl">Clear All</button>
             
-            <div class="menu h-80vh flex flex-col flex-grow overflow-y-scroll items-center items-start">
+            <div class="menu max-h-80vh flex flex-col flex-grow overflow-y-scroll items-center items-start">
             <button class = "dropdown justify-center">Objects</button>
                 <div class = "dropdown-content">
                     <button class="button">
@@ -165,7 +165,8 @@
             <footer class="footer w-full h-[50px] bg-[rgb(4,4,73)]"></footer>
         
         </div>
-        <div id="canvas" class="canvas text-blue-500 rounded-[10px] w-[90%] relative">
+        <div id="canvas" class="text-blue-500 rounded-[10px] w-[90%] relative">
+            <canvas id="draw" class="h-full w-full"></canvas>
         </div>
     </div>
 
