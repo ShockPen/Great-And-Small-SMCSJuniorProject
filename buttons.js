@@ -6,10 +6,16 @@ const buttons = document.getElementsByClassName("button");
 const removeBtn = document.getElementById("rm");
 const clearBtn = document.getElementById("cl");
 const canvas = document.getElementById("canvas");
+const drawing = document.getElementById("draw");
+const ctx = drawing.getContext("2d");
 
 const BUTTON_ANIMATION_STYLING = ['h-[165px]', 'w-[220px]'];
 const REMOVE_IMAGE_BUTTON_ANIMATION = ['bg-red-600', 'text-white', 'duration-100', 'east-in-out', 'transition-all'];
-
+caches.open('my-app-cache').then((cache) => {
+    cache.add('/index.html')
+        .then(() => console.log('main.css added to cache'))
+        .catch((err) => console.error('Failed to add item:', err));
+});
 
 init();
 
@@ -99,6 +105,7 @@ function addImageToCanvas(button) {
     if (button.id!="buttoncustom"){
         moveDiv.appendChild(soundBtn);
     }
+    moveDiv.style.touchAction = "none";
     canvas.appendChild(moveDiv);
 
     setupImageBehavior(moveDiv);
@@ -108,7 +115,7 @@ function addImageToCanvas(button) {
 
 function setupImageBehavior(element) {
     element.onpointerdown = null;
-
+    element.touchAction = null;
     if (removeMode) {
         element.classList.remove('drag-mode');
         element.classList.add('remove-mode');
