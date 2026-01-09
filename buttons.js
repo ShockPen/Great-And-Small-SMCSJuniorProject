@@ -43,14 +43,25 @@ function init() {
         ctx.beginPath(); 
     });
     drawing.addEventListener('pointermove', (e) => {
-        if(!isDrawing||!drawMode) {
+        if(!isDrawing) {
             return;
         };
+        if (removeMode){
+            ctx.lineWidth = 20;
+            ctx.lineCap = "round";
+            ctx.strokeStyle = 'white';
+            ctx.lineTo(e.clientX-offsetX,e.clientY-(canvas.offsetTop));
+        ctx.stroke();
+        }if (!drawMode){
+            return;
+        }else{
         ctx.lineWidth = lineWidth;
         ctx.lineCap = "round";
+        ctx.strokeStyle = 'black';
         console.log(offsetX);
         ctx.lineTo(e.clientX-offsetX,e.clientY-(canvas.offsetTop));
         ctx.stroke();
+        }
     });
     drawBtn.addEventListener('click', toggleDrawMode);
     canvas.addEventListener('pointerdown', handleSoundButton);
@@ -66,6 +77,8 @@ function toggleDrawMode() {
     drawMode = !drawMode;
     if(drawMode) {
         drawBtn.classList.add('bg-blue-300');
+        removeMode = false;
+        removeBtn.classList.remove(...REMOVE_IMAGE_BUTTON_ANIMATION);
     }else{
         drawBtn.classList.remove('bg-blue-300');
     }
@@ -74,6 +87,8 @@ function toggleRemoveMode() {
     removeMode = !removeMode;
     if (removeMode) {
         removeBtn.classList.add(...REMOVE_IMAGE_BUTTON_ANIMATION);
+        drawMode = false;
+        drawBtn.classList.remove('bg-blue-300');
     } else {
         removeBtn.classList.remove(...REMOVE_IMAGE_BUTTON_ANIMATION);
     }
