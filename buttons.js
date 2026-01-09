@@ -1,20 +1,25 @@
 let count = 1;
 let removeMode = false;
 let activeElement = null;
+let drawMode = false;
 
 const buttons = document.getElementsByClassName("button");
 const removeBtn = document.getElementById("rm");
 const clearBtn = document.getElementById("cl");
+const drawBtn = document.getElementById("drawset");
 const canvas = document.getElementById("canvas");
 const drawing = document.getElementById("draw");
 const ctx = drawing.getContext("2d");
+const header = document.getElementById("header");
+const offsetX = canvas.offsetLeft;
+const offsetY = header.offsetTop;
+let isDrawing = false;
+let lineWidth = 1;
 
 const BUTTON_ANIMATION_STYLING = ['h-[165px]', 'w-[220px]'];
 const REMOVE_IMAGE_BUTTON_ANIMATION = ['bg-red-600', 'text-white', 'duration-100', 'east-in-out', 'transition-all'];
 caches.open('my-app-cache').then((cache) => {
-    cache.add('/index.html')
-        .then(() => console.log('main.css added to cache'))
-        .catch((err) => console.error('Failed to add item:', err));
+    cache.add('/index.html');
 });
 
 init();
@@ -26,7 +31,28 @@ function init() {
     for (let button of buttons) {
         button.addEventListener('click', () => addImageToCanvas(button));
     }
-
+    drawing.width = window.innerWidth-offsetX;
+    drawing.height = window.innerHeight-offsetY;
+    ctx.imageSmoothingEnabled = true;
+    drawing.addEventListener('pointerdown', (e) => {
+        isDrawing = true;
+    });
+    drawing.addEventListener('pointerup', (e) => {
+        isDrawing = false; 
+        ctx.stroke();
+        ctx.beginPath(); 
+    });
+    drawing.addEventListener('pointermove', (e) => {
+        if(!isDrawing||!drawMode) {
+            return;
+        };
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = "round";
+        console.log(offsetX);
+        ctx.lineTo(e.clientX-offsetX,e.clientY-(canvas.offsetTop));
+        ctx.stroke();
+    });
+    drawBtn.addEventListener('click', toggleDrawMode);
     canvas.addEventListener('pointerdown', handleSoundButton);
     handledropdown()
 }
@@ -34,8 +60,16 @@ function init() {
 function clearAll() {
     const images = canvas.querySelectorAll('.move');
     images.forEach(img => img.remove());
+    ctx.clearRect(0,0,drawing.width,drawing.height);
 }
-
+function toggleDrawMode() {
+    drawMode = !drawMode;
+    if(drawMode) {
+        drawBtn.classList.add('bg-blue-300');
+    }else{
+        drawBtn.classList.remove('bg-blue-300');
+    }
+}
 function toggleRemoveMode() {
     removeMode = !removeMode;
     if (removeMode) {
