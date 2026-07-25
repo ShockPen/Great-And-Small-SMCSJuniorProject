@@ -3,51 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mint</title>
+    <title>PECS Sentence Builder</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="global.css">
 </head>
 
-<body class="h-full w-full p-0 m-0 overflow-hidden">
-    <header class="w-full h-[50px] text-yellow-100 bg-[rgb(4,4,73)] flex items-center px-4 gap-4">
-        Images
-        <select id="Categories" class="bg-[rgb(7,7,133)] ml-auto text-white px-2 py-1">
-            <option>Objects</option>
-            <option>Animals</option>
-            <option>Emotions</option>
-            <option>Actions</option>
-            <option>General Communication</option>
-        </select>
+<body class="h-full w-full p-0 m-0 overflow-hidden bg-white text-black   flex flex-col">
+    <header class="w-full h-[55px] text-yellow-100 bg-[rgb(4,4,73)] flex items-center px-4 gap-4 border-b border-indigo-900 shadow">
+        <span class="font-bold text-lg text-yellow-300">Sentence Builder</span>
+        
+        <div class="flex items-center gap-2 ml-auto">
+            <label for="Categories" class="text-xs text-indigo-200 font-semibold">Category:</label>
+            <select id="Categories" class="bg-[rgb(7,7,133)] text-white border border-indigo-600 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
+                <option value="Objects">Objects</option>
+                <option value="Animals">Animals</option>
+                <option value="Emotions">Emotions</option>
+                <option value="Actions">Actions</option>
+                <option value="General Communication">General Communication</option>
+                <option value="Custom Cards">Custom Cards</option>
+            </select>
+        </div>
 
-    
-        <button class="ml-4">
-            <a href="index.html"> <img src="graphics\backarrow.png" class = "w-[45px] h-[45px]"/></a>
-        </button>
+        <a href="index.html" class="p-1 rounded-lg hover:bg-indigo-900 transition ml-2">
+            <img src="graphics/backarrow.png" class="w-[38px] h-[38px]"/>
+        </a>
     </header>
  
-    <div id="imageGrid" class="flex flex-wrap gap-4 p-4 justify-center"></div>
+    <!-- PECS Image Grid Area -->
+    <div id="imageGrid" class="flex-grow flex flex-wrap gap-4 p-6 justify-center items-start content-start overflow-y-auto pb-44"></div>
 
-    <div class="fixed bottom-0 left-0 w-full bg-gray-200 p-4 border-t z-50">
-        <h2 class="font-bold">Sentence Strip</h2>
-
-        <div id="sentenceStrip" class="flex gap-2 mt-2 min-h-[70px]"></div>
-        <div class="mt-2 flex gap-2">
-            <input id="customText" type="text" placeholder="Enter custom text" class="px-2 py-1 border rounded w-[200px]"/>
-            <button id="addTextBtn" class="bg-blue-600 text-white px-3 py-1 rounded">
-                Add Text
-            </button>
+    <!-- Fixed Bottom Sentence Strip Workspace -->
+    <div class="fixed bottom-0 left-0 w-full bg-slate-500 backdrop-blur-md p-4 border-t border-indigo-700/60 z-50 shadow-2xl flex flex-col gap-2">
+        <div class="flex justify-between items-center">
+            <h2 class="font-bold text-sm text-yellow-300 tracking-wide uppercase">Sentence Strip</h2>
+            <span class="text-xs text-slate-400">Tap cards or add custom text to build a sentence</span>
         </div>
-        <div class="mt-3">
-            <button id="clearBtn" class="bg-red-500 text-white px-4 py-2 rounded">
-                Clear
-            </button>
 
-            <button id="playBtn" class="ml-3 bg-green-600 text-white px-4 py-2 rounded">
-                Play Sentence
-            </button>
+        <div id="sentenceStrip" class="flex gap-3 min-h-[85px] items-center p-2 bg-slate-800 rounded-xl border border-indigo-900/60 overflow-x-auto"></div>
+        
+        <div class="flex flex-wrap justify-between items-center gap-3 mt-1">
+            <div class="flex gap-2 items-center">
+                <input id="customText" type="text" placeholder="Enter custom word/text..." class="px-3 py-1.5 bg-slate-900 border border-slate-700 text-sm rounded-lg w-[240px] text-white focus:outline-none focus:border-blue-400"/>
+                <button id="addTextBtn" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-1.5 rounded-lg text-sm font-semibold shadow transition">
+                    + Add Text
+                </button>
+            </div>
+            
+            <div class="flex gap-3">
+                <button id="clearBtn" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-1.5 rounded-lg text-sm font-semibold shadow transition">
+                    🗑️ Clear
+                </button>
+
+                <button id="playBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-1.5 rounded-lg text-sm font-bold shadow transition flex items-center gap-1.5">
+                    🔊 Play Sentence
+                </button>
+            </div>
         </div>
     </div>
-</body>
 
+    <script src="pecs.js"></script>
+</body>
 </html>
-<script src="pecs.js"></script>

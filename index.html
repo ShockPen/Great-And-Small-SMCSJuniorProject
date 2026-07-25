@@ -3,171 +3,251 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mint</title>
+    <title>Mint PECS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="global.css">
     <link href="" rel="icon">
 </head>
-<body class="h-full w-full p-0 m-0 overflow-hidden">
-    <header class="w-full h-[50px] text-yellow-100 bg-[rgb(4,4,73)] flex items-center px-4" id="header">Images
-        <button style = "margin-left: auto"><a href="pecs.html"><img src= "graphics\backarrow.png" class = "w-[45px] h-[45px] -scale-x-100"/></a></button>
+<body class="h-full w-full p-0 m-0 overflow-hidden bg-gray-900 text-white select-none">
+    <!-- Live Tool Cursor Outline Indicator -->
+    <div id="toolCursor"></div>
+
+    <header class="w-full h-[55px] text-yellow-100 bg-[rgb(4,4,73)] flex items-center px-4 justify-between border-b border-indigo-900" id="header">
+        <div class="flex items-center gap-3">
+            <span class="text-xl font-bold tracking-wide text-yellow-300">PECS Interactive Studio</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button id="uploadCardBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold flex items-center gap-1.5 shadow transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Upload Custom Card
+            </button>
+            <a href="pecs.html" class="p-1 rounded-lg hover:bg-indigo-900 transition"><img src="graphics/backarrow.png" class="w-[38px] h-[38px] -scale-x-100"/></a>
+        </div>
     </header>
     
-    <div class="flex flex-row gap-0 h-full overflow-y-hidden">
-        <div class="sidebar h-full w-[225px] sticky z-10 top-0 left-0 overflow-x-hidden overflow-y-hidden text-[rgb(255,209,220)] bg-[rgb(7,7,133)] pt-5 flex flex-col justify-center items-center">
-            <button class= "drawer text-black bg-white h-[50px] w-[50px] rounded-[5px]" id="drawset">Draw</button>
-            <button class="remove text-[rgb(255,92,92)] bg-white h-[30px] w-[120px] rounded-[5px]" id="rm">Eraser</button>
-            <button class="remove text-[rgb(255,92,92)] bg-white h-[30px] w-[120px] rounded-[5px]" id="cl">Clear All</button>
+    <div class="flex flex-row gap-0 h-[calc(100vh-55px)] overflow-hidden">
+        <!-- Sidebar -->
+        <div class="sidebar h-full w-[260px] sticky z-10 top-0 left-0 overflow-x-hidden overflow-y-auto text-pink-100 bg-[rgb(7,7,133)] p-3 flex flex-col gap-3 border-r border-indigo-900 shadow-xl">
             
-            <div class="menu max-h-80vh flex flex-col flex-grow overflow-y-scroll items-center items-start">
-            <button class = "dropdown justify-center">Objects</button>
-                <div class = "dropdown-content">
-                    <button class="button">
-                            <img src="./images/blocks.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
+            <!-- Drawing & Eraser Controls Section -->
+            <div class="bg-indigo-950/80 p-3 rounded-xl border border-indigo-700/50 flex flex-col gap-2.5 shadow-md">
+                <div class="text-xs font-bold uppercase tracking-wider text-indigo-300 flex justify-between items-center">
+                    <span>Drawing Tools</span>
+                    <span id="activeToolBadge" class="text-[10px] px-2 py-0.5 rounded bg-blue-600 text-white font-normal">Draw</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <button class="tool-btn text-black bg-white hover:bg-gray-100 font-bold h-[38px] rounded-lg text-sm flex items-center justify-center gap-1 shadow" id="drawset">
+                        ✏️ Draw
                     </button>
-                    <button class="button">
-                            <img src="./images/bubbles.jpg" class="bg-[rgb(53,53,240)] text-black rounded-[10px] w-[200px] h-[150px]"/>
+                    <button class="tool-btn text-red-600 bg-white hover:bg-red-50 font-bold h-[38px] rounded-lg text-sm flex items-center justify-center gap-1 shadow" id="rm">
+                        🧹 Eraser
                     </button>
-                    <button class="button">
-                    <img src="./images/bodybrush.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                    <img src="./images/currycomb.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                    <img src="./images/haybale.gif" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                    <img src="./images/hoofpickwithbrush.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                <button class="button">
-                    <img src="./images/maneandtailbrush.png" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-               </div>
-            <button class = "dropdown justify-center">Animals</button>
-               <div class = "dropdown-content">
-                    <button class="button">
-                        <img src="./images/cat.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                        <img src="./images/cow.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                        <img src="./images/dog.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                        <img src="./images/goat.gif" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                        <img src="./images/horse.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button" id="button2">
-                        <img src="./images/kid.png" class="bg-[rgb(53,53,240)] text-black rounded-[10px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                        <img src="./images/pig.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-               </div>
-            <button class = "dropdown justify-center">Emotions</button>
-               <div class = "dropdown-content">
-                    <button class="button">
-                                <img src="./images/angry.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                            <img src="./images/crying.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                            <img src="./images/excited.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                            <img src="./images/happy.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                            <img src="./images/mad.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                            <img src="./images/proud.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                            <img src="./images/sad.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
-                    <button class="button">
-                            <img src="./images/surprised.gif" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                    </button>
+                </div>
                 
-                    
-               </div>
-            <button class = "dropdown justify-center">Actions</button>
-            <div class="dropdown-content">
-                <button class="button">
-                    <img src="./images/calmdown.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
+                <button class="bg-rose-600 hover:bg-rose-700 text-white font-medium h-[32px] rounded-lg text-xs transition shadow" id="cl">
+                    🗑️ Clear Canvas
                 </button>
-                <button class="button">
-                    <img src="./images/crying.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                <button class="button">
-                    <img src="./images/drinking.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                <button class="button">
-                    <img src="./images/eat.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                <button class="button">
-                    <img src="./images/fistbump.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                <button class="button">
-                    <img src="./images/goodjob.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                <button class="button">
-                    <img src="./images/highfive.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                <button class="button">
-                    <img src="./images/listen.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                <button class="button">
-                    <img src="./images/putonhelmet.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                <button class="button">
-                    <img src="./images/quiet.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                <button class="button">
-                    <img src="./images/sit.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                <button class="button">
-                    <img src="./images/wait.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
-                </button>
-                
+
+                <!-- Dynamic Brush Size Control -->
+                <div class="flex flex-col gap-1 mt-1">
+                    <div class="flex justify-between text-xs text-indigo-200">
+                        <span id="sizeLabel">Brush Size: 3px</span>
+                        <div id="brushPreview" class="w-4 h-4 rounded-full bg-black border border-white self-center"></div>
+                    </div>
+                    <input type="range" id="lineWidthSlider" min="1" max="50" value="3" class="w-full h-1.5 bg-indigo-900 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <!-- Color Picker with RGB Sliders -->
+                <div class="flex flex-col gap-2 mt-1 pt-2 border-t border-indigo-800/60">
+                    <div class="flex justify-between items-center text-xs font-semibold text-indigo-200">
+                        <span>Color Picker</span>
+                        <div id="colorPreviewHex" class="px-2 py-0.5 rounded text-[11px] font-mono bg-black text-white border border-gray-600">#000000</div>
+                    </div>
+
+                    <!-- RGB Sliders -->
+                    <div class="space-y-1 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span class="text-red-400 font-bold w-3">R</span>
+                            <input type="range" id="sliderR" min="0" max="255" value="0" class="w-full h-1.5 bg-red-900/60 rounded appearance-none cursor-pointer">
+                            <span id="valR" class="w-6 text-right font-mono text-[10px]">0</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-green-400 font-bold w-3">G</span>
+                            <input type="range" id="sliderG" min="0" max="255" value="0" class="w-full h-1.5 bg-green-900/60 rounded appearance-none cursor-pointer">
+                            <span id="valG" class="w-6 text-right font-mono text-[10px]">0</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-blue-400 font-bold w-3">B</span>
+                            <input type="range" id="sliderB" min="0" max="255" value="0" class="w-full h-1.5 bg-blue-900/60 rounded appearance-none cursor-pointer">
+                            <span id="valB" class="w-6 text-right font-mono text-[10px]">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Preset Swatches -->
+                    <div class="flex gap-1.5 justify-between mt-1">
+                        <button class="preset-color w-6 h-6 rounded-full bg-black border border-white/40 hover:scale-110 transition" data-color="#000000"></button>
+                        <button class="preset-color w-6 h-6 rounded-full bg-red-500 hover:scale-110 transition" data-color="#ef4444"></button>
+                        <button class="preset-color w-6 h-6 rounded-full bg-blue-500 hover:scale-110 transition" data-color="#3b82f6"></button>
+                        <button class="preset-color w-6 h-6 rounded-full bg-green-500 hover:scale-110 transition" data-color="#22c55e"></button>
+                        <button class="preset-color w-6 h-6 rounded-full bg-yellow-400 hover:scale-110 transition" data-color="#eab308"></button>
+                        <button class="preset-color w-6 h-6 rounded-full bg-purple-500 hover:scale-110 transition" data-color="#a855f7"></button>
+                        <button class="preset-color w-6 h-6 rounded-full bg-white hover:scale-110 transition" data-color="#ffffff"></button>
+                    </div>
+                </div>
             </div>
-            <button class = "dropdown justify-center">General Communication</button>
-            <div class = "dropdown-content">
-                <button class="button">
-                    <img src="./images/goodjob.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
+
+            <!-- Library Cards Accordion Menu -->
+            <div class="menu flex flex-col gap-2 overflow-y-auto pr-1">
+                <button class="dropdown justify-between items-center bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow">
+                    <span>Custom Cards</span>
+                    <span class="text-xs">▼</span>
                 </button>
-                <button class="button">
-                    <img src="./images/hello.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
+                <div class="dropdown-content gap-2 w-full pt-1" id="customCategoryGroup">
+                    <!-- Dynamic custom cards inserted here -->
+                    <p class="text-xs text-indigo-300 italic p-2 text-center" id="noCustomText">No custom cards uploaded yet.</p>
+                </div>
+
+                <button class="dropdown justify-between items-center bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow">
+                    <span>Objects</span>
+                    <span class="text-xs">▼</span>
                 </button>
-                <button class="button">
-                    <img src="./images/idon'tknow.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
+                <div class="dropdown-content gap-2 w-full pt-1">
+                    <button class="button"><img src="./images/blocks.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/bubbles.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/bodybrush.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/currycomb.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/haybale.gif" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/hoofpickwithbrush.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/maneandtailbrush.png" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                </div>
+
+                <button class="dropdown justify-between items-center bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow">
+                    <span>Animals</span>
+                    <span class="text-xs">▼</span>
                 </button>
-                <button class="button">
-                    <img src="./images/ineedhelp.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
+                <div class="dropdown-content gap-2 w-full pt-1">
+                    <button class="button"><img src="./images/cat.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/cow.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/dog.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/goat.gif" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/horse.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/kid.png" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/pig.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                </div>
+
+                <button class="dropdown justify-between items-center bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow">
+                    <span>Emotions</span>
+                    <span class="text-xs">▼</span>
                 </button>
-                <button class="button">
-                    <img src="./images/iwant.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
+                <div class="dropdown-content gap-2 w-full pt-1">
+                    <button class="button"><img src="./images/angry.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/crying.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/excited.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/happy.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/mad.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/proud.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/sad.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/surprised.gif" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                </div>
+
+                <button class="dropdown justify-between items-center bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow">
+                    <span>Actions</span>
+                    <span class="text-xs">▼</span>
                 </button>
-                <button class="button">
-                    <img src="./images/thisone.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
+                <div class="dropdown-content gap-2 w-full pt-1">
+                    <button class="button"><img src="./images/calmdown.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/crying.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/drinking.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/eat.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/fistbump.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/goodjob.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/highfive.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/listen.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/putonhelmet.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/quiet.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/sit.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/wait.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                </div>
+
+                <button class="dropdown justify-between items-center bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow">
+                    <span>General Communication</span>
+                    <span class="text-xs">▼</span>
                 </button>
-                <button class="button">
-                    <img src="./images/wait.jpg" class="justify-center bg-[rgb(53,53,240)] text-black rounded-[30px] w-[200px] h-[150px]"/>
+                <div class="dropdown-content gap-2 w-full pt-1">
+                    <button class="button"><img src="./images/goodjob.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/hello.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/idon'tknow.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/ineedhelp.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/iwant.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/thisone.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                    <button class="button"><img src="./images/wait.jpg" class="rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30"/></button>
+                </div>
+
+                <button class="button bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg w-full py-2 font-medium text-xs shadow mt-1" id="buttoncustom">
+                    Text Note Card
                 </button>
             </div>
-            <button class="button bg-white text-blue-300 rounded-[10px] w-[200px] h-[30px] overflow-hidden bg-cover bg-center" id="buttoncustom">Custom Element</button>
-            </div>
-            <footer class="footer w-full h-[50px] bg-[rgb(4,4,73)]"></footer>
-        
         </div>
-        <div id="canvas" class="z-1 text-blue-500 rounded-[10px] w-full h-full relative">
-            <canvas id="draw" class="bgz-2 relative h-full w-full"></canvas>
+
+        <!-- Main Workspace Canvas Area -->
+        <div id="canvas" class="z-1 w-full h-full relative bg-gray-100 overflow-hidden">
+            <canvas id="draw" class="relative h-full w-full cursor-crosshair"></canvas>
+        </div>
+    </div>
+
+    <!-- Custom Card Creation Modal -->
+    <div id="customCardModal" class="modal-overlay hidden">
+        <div class="modal-content flex flex-col gap-4">
+            <div class="flex justify-between items-center border-b border-indigo-700/60 pb-3">
+                <h3 class="text-lg font-bold text-yellow-300">Create Custom PECS Card</h3>
+                <button id="closeModalBtn" class="text-gray-400 hover:text-white text-xl font-bold">&times;</button>
+            </div>
+
+            <!-- Step 1: Upload & Crop Image -->
+            <div class="flex flex-col gap-2">
+                <label class="text-xs font-semibold text-indigo-200">1. Card Picture (Drag to reposition & scale)</label>
+                <input type="file" id="cardImageInput" accept="image/*" class="text-xs text-indigo-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
+                
+                <!-- Crop Preview Workspace -->
+                <div id="cropArea" class="hidden flex-col items-center gap-2 mt-2 p-3 bg-indigo-950 rounded-xl border border-indigo-800">
+                    <p class="text-[11px] text-indigo-300 flex items-center justify-between w-full">
+                        <span>✋ Drag to move image • Scroll wheel or buttons to zoom</span>
+                        <span id="cropZoomLevelText" class="text-[10px] text-yellow-400 font-mono">100%</span>
+                    </p>
+                    <!-- Card Frame with prominent card border outline and contrasting background -->
+                    <div class="relative p-2 bg-indigo-900/80 rounded-xl border-2 border-indigo-500 shadow-lg flex flex-col items-center">
+                        <div class="text-[10px] uppercase font-bold text-indigo-300 mb-1 tracking-wider">Card Crop Frame (4:3)</div>
+                        <div class="relative overflow-hidden bg-slate-900 rounded-lg border-2 border-amber-400 shadow-inner">
+                            <canvas id="cropCanvas" class="block cursor-grab active:cursor-grabbing select-none" width="240" height="180"></canvas>
+                        </div>
+                    </div>
+                    <!-- Control Bar with unresticted zoom buttons -->
+                    <div class="flex items-center justify-center gap-2 w-full mt-1">
+                        <button id="zoomOutBtn" type="button" class="px-3 py-1 bg-indigo-800 hover:bg-indigo-700 text-white rounded text-xs font-bold shadow">- Zoom Out</button>
+                        <button id="zoomInBtn" type="button" class="px-3 py-1 bg-indigo-800 hover:bg-indigo-700 text-white rounded text-xs font-bold shadow">+ Zoom In</button>
+                        <button id="resetCropBtn" type="button" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-200 rounded text-xs font-medium transition">Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Card Name -->
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-semibold text-indigo-200" for="cardNameInput">2. Card Label Name</label>
+                <input type="text" id="cardNameInput" placeholder="e.g. My Favorite Toy" class="px-3 py-2 bg-indigo-950 border border-indigo-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-400">
+            </div>
+
+            <!-- Step 3: Audio File attachment -->
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-semibold text-indigo-200">3. Sound / Audio File (Optional)</label>
+                <input type="file" id="cardAudioInput" accept="audio/*" class="text-xs text-indigo-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
+            </div>
+
+            <!-- Modal Action Footer -->
+            <div class="flex justify-end gap-2 border-t border-indigo-700/60 pt-3 mt-1">
+                <button id="cancelCardBtn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold rounded-lg">Cancel</button>
+                <button id="saveCardBtn" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow">Save & Add Card</button>
+            </div>
         </div>
     </div>
 

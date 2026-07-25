@@ -5,6 +5,7 @@ const pecsData = [
     { name: "Curry Comb", category: "Objects", image: "./images/currycomb.jpg" },
     { name: "Hay Bale", category: "Objects", image: "./images/haybale.gif" },
     { name: "Hoof Pick", category: "Objects", image: "./images/hoofpickwithbrush.jpg" },
+    { name: "Mane & Tail Brush", category: "Objects", image: "./images/maneandtailbrush.png" },
 
     { name: "Cat", category: "Animals", image: "./images/cat.jpg" },
     { name: "Cow", category: "Animals", image: "./images/cow.jpg" },
@@ -23,37 +24,37 @@ const pecsData = [
     { name: "Sad", category: "Emotions", image: "./images/sad.jpg" },
     { name: "Surprised", category: "Emotions", image: "./images/surprised.gif" },
 
-    { name: "Calmdown", category: "Actions", image: "./images/calmdown.jpg" },
+    { name: "Calm Down", category: "Actions", image: "./images/calmdown.jpg" },
     { name: "Crying", category: "Actions", image: "./images/crying.jpg" },
     { name: "Drinking", category: "Actions", image: "./images/drinking.jpg" },
     { name: "Eat", category: "Actions", image: "./images/eat.jpg" },
-    { name: "Fistbump", category: "Actions", image: "./images/fistbump.jpg" },
-    { name: "Goodjob", category: "Actions", image: "./images/goodjob.jpg" },
-    { name: "Highfive", category: "Actions", image: "./images/highfive.jpg" },
+    { name: "Fist Bump", category: "Actions", image: "./images/fistbump.jpg" },
+    { name: "Good Job", category: "Actions", image: "./images/goodjob.jpg" },
+    { name: "High Five", category: "Actions", image: "./images/highfive.jpg" },
     { name: "Listen", category: "Actions", image: "./images/listen.jpg" },
-    { name: "Put on helmet", category: "Actions", image: "./images/putonhelmet.jpg" },
+    { name: "Put On Helmet", category: "Actions", image: "./images/putonhelmet.jpg" },
     { name: "Quiet", category: "Actions", image: "./images/quiet.jpg" },
     { name: "Sit", category: "Actions", image: "./images/sit.jpg" },
     { name: "Wait", category: "Actions", image: "./images/wait.jpg" },
 
     { name: "Yes", category: "General Communication", image: "./images/yes.png" },
     { name: "No", category: "General Communication", image: "./images/no.png" },
-    { name: "Goodjob", category: "General Communication", image: "./images/goodjob.jpg" },
+    { name: "Good Job", category: "General Communication", image: "./images/goodjob.jpg" },
     { name: "Hello", category: "General Communication", image: "./images/hello.jpg" },
-    { name: "I don't know", category: "General Communication", image: "./images/idon'tknow.jpg" },
-    { name: "I need help", category: "General Communication", image: "./images/ineedhelp.jpg" },
-    { name: "I want", category: "General Communication", image: "./images/iwant.jpg" },
-    { name: "This one", category: "General Communication", image: "./images/thisone.jpg" },
+    { name: "I Don't Know", category: "General Communication", image: "./images/idon'tknow.jpg" },
+    { name: "I Need Help", category: "General Communication", image: "./images/ineedhelp.jpg" },
+    { name: "I Want", category: "General Communication", image: "./images/iwant.jpg" },
+    { name: "This One", category: "General Communication", image: "./images/thisone.jpg" },
     { name: "Wait", category: "General Communication", image: "./images/wait.jpg" },
 ];
 
-// Color mapping for neurodivergent focus (Fitzgerald Key inspired)
 const colors = {
     "Objects": "border-orange-400 bg-orange-50",
     "Emotions": "border-blue-400 bg-blue-50",
     "Actions": "border-green-400 bg-green-50",
     "General Communication": "border-yellow-400 bg-yellow-50",
-    "Animals": "border-purple-400 bg-purple-50"
+    "Animals": "border-purple-400 bg-purple-50",
+    "Custom Cards": "border-emerald-400 bg-emerald-50"
 };
 
 const grid = document.getElementById("imageGrid");
@@ -66,40 +67,101 @@ const addTextBtn = document.getElementById("addTextBtn");
 
 let sentenceWords = [];
 
+// Load custom uploaded cards from localStorage
+function getCustomCards() {
+    try {
+        const stored = localStorage.getItem('pecs_custom_cards');
+        if (stored) {
+            return JSON.parse(stored).map(card => ({
+                id: card.id,
+                name: card.name,
+                category: "Custom Cards",
+                image: card.imageSrc,
+                audioSrc: card.audioSrc
+            }));
+        }
+    } catch(e) {
+        console.error('Error reading custom cards:', e);
+    }
+    return [];
+}
+
+function removeCustomCard(cardId) {
+    if (!confirm('Are you sure you want to remove this custom card?')) return;
+
+    try {
+        const stored = localStorage.getItem('pecs_custom_cards');
+        if (stored) {
+            let cards = JSON.parse(stored);
+            cards = cards.filter(c => c.id !== cardId);
+            localStorage.setItem('pecs_custom_cards', JSON.stringify(cards));
+        }
+    } catch(e) {
+        console.error('Error updating custom cards in localStorage:', e);
+    }
+
+    renderImages(categorySelect.value);
+}
+
 // RENDER IMAGES
 function renderImages(category) {
     grid.innerHTML = "";
-    const filtered = pecsData.filter(item => item.category === category);
+    
+    let allCards = [...pecsData];
+    const customCards = getCustomCards();
+    allCards = allCards.concat(customCards);
+
+    const filtered = allCards.filter(item => item.category === category);
+
+    if (filtered.length === 0) {
+        grid.innerHTML = `<p class="text-slate-400 italic text-sm mt-8">No cards available in "${category}". Upload custom cards in PECS Studio!</p>`;
+        return;
+    }
 
     filtered.forEach(item => {
         const colorClass = colors[item.category] || "border-slate-300 bg-white";
         
         const card = document.createElement("button");
-        card.className = `flex flex-col items-center p-2 border-4 rounded-2xl shadow-sm hover:shadow-md transition-all active:scale-95 ${colorClass}`;
+        card.className = `relative flex flex-col items-center justify-between p-2 border-4 rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-95 ${colorClass} w-[200px] h-[150px] flex-shrink-0 flex-grow-0 group`;
         
+        let deleteBtnHTML = '';
+        if (item.category === "Custom Cards" && item.id) {
+            deleteBtnHTML = `<div class="delete-card-btn absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md cursor-pointer transition transform hover:scale-110" title="Remove custom card">🗑️</div>`;
+        }
+
         card.innerHTML = `
-            <img src="${item.image}" alt="${item.name}" class="w-full h-24 object-contain rounded-lg">
-            <span class="mt-2 font-bold text-slate-800 uppercase text-xs tracking-wide">${item.name}</span>
+            ${deleteBtnHTML}
+            <img src="${item.image}" alt="${item.name}" class="w-full h-[100px] object-contain rounded-xl shadow-inner pointer-events-none">
+            <span class="font-bold text-slate-800 uppercase text-xs tracking-wide truncate w-full text-center px-1 py-0.5 pointer-events-none">${item.name}</span>
         `;
         
-        card.onclick = () => addToSentence(item);
+        card.onclick = (e) => {
+            if (e.target.classList.contains('delete-card-btn')) {
+                e.preventDefault();
+                e.stopPropagation();
+                removeCustomCard(item.id);
+                return;
+            }
+            addToSentence(item);
+        };
+
         grid.appendChild(card);
     });
 }
 
 // ADD TO STRIP
 function addToSentence(item) {
-    const wordId = Date.now(); // Unique ID for specific removal
-    sentenceWords.push({ id: wordId, name: item.name });
+    const wordId = Date.now();
+    sentenceWords.push({ id: wordId, name: item.name, audioSrc: item.audioSrc });
 
     const wrapper = document.createElement("div");
     wrapper.className = "relative flex-shrink-0 animate-in fade-in zoom-in duration-200";
     
     wrapper.innerHTML = `
-        <div class="w-20 h-20 bg-white border-2 border-blue-500 rounded-lg p-1 flex flex-col items-center justify-center cursor-pointer shadow-sm overflow-hidden">
-            <img src="${item.image}" class="h-12 w-12 object-contain">
-            <span class="text-[10px] font-bold uppercase text-center leading-none mt-1">${item.name}</span>
-            <div class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md">✕</div>
+        <div class="w-[100px] h-[75px] bg-white border-2 border-blue-500 rounded-xl p-1 flex flex-col items-center justify-between cursor-pointer shadow-md overflow-hidden relative">
+            <img src="${item.image}" class="h-[48px] w-full object-contain rounded-md">
+            <span class="text-[9px] font-bold uppercase text-center leading-none text-gray-800 truncate w-full px-0.5 pb-0.5">${item.name}</span>
+            <div class="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-md">✕</div>
         </div>
     `;
 
@@ -116,9 +178,9 @@ function addCustomText(text) {
     const wrapper = document.createElement("div");
     wrapper.className = "relative flex-shrink-0";
     wrapper.innerHTML = `
-        <div class="h-20 px-4 bg-blue-600 text-white rounded-lg flex items-center justify-center cursor-pointer shadow-md font-bold">
+        <div class="w-[100px] h-[75px] px-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center justify-center cursor-pointer shadow-md font-bold text-xs text-center leading-tight relative overflow-hidden">
             ${text}
-            <div class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">✕</div>
+            <div class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-md">✕</div>
         </div>
     `;
 
@@ -141,7 +203,8 @@ clearBtn.addEventListener("click", () => {
 
 playBtn.addEventListener("click", () => {
     if (sentenceWords.length === 0) return;
-    const utterance = new SpeechSynthesisUtterance(sentenceWords.map(w => w.name).join(" "));
+    const textToSpeak = sentenceWords.map(w => w.name).join(" ");
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.rate = 0.8; 
     speechSynthesis.cancel();
     speechSynthesis.speak(utterance);
@@ -152,5 +215,5 @@ addTextBtn.addEventListener("click", () => {
     customTextInput.value = "";
 });
 
-// Init
+// Initial Render
 renderImages("Objects");
