@@ -15,14 +15,17 @@
         <div class="flex items-center gap-2 ml-auto">
             <label for="Categories" class="text-xs text-indigo-200 font-semibold">Category:</label>
             <select id="Categories" class="bg-[rgb(7,7,133)] text-white border border-indigo-600 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400">
-                <option value="Objects">Objects</option>
-                <option value="Animals">Animals</option>
-                <option value="Emotions">Emotions</option>
-                <option value="Actions">Actions</option>
-                <option value="General Communication">General Communication</option>
-                <option value="Custom Cards">Custom Cards</option>
+                <!-- Categories are loaded from card-library.js -->
             </select>
         </div>
+
+        <button id="exportProfileBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow transition">
+            Export Profile ZIP
+        </button>
+        <button id="importProfileBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow transition">
+            Import Profile ZIP
+        </button>
+        <input id="profileFileInput" type="file" accept=".zip,.pecs-profile.zip,application/zip" class="hidden">
 
         <a href="index.html" class="p-1 rounded-lg hover:bg-indigo-900 transition ml-2">
             <img src="graphics/backarrow.png" class="w-[38px] h-[38px]"/>
@@ -61,6 +64,7 @@
         </div>
     </div>
 
+    <script src="card-library.js"></script>
     <script src="pecs.js"></script>
 </body>
 </html>

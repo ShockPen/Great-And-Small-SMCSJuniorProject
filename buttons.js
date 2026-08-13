@@ -46,6 +46,7 @@ const cropZoomLevelText = document.getElementById("cropZoomLevelText");
 const zoomInBtn = document.getElementById("zoomInBtn");
 const zoomOutBtn = document.getElementById("zoomOutBtn");
 const resetCropBtn = document.getElementById("resetCropBtn");
+const libraryMenu = document.getElementById("libraryMenu");
 const customCategoryGroup = document.getElementById("customCategoryGroup");
 const noCustomText = document.getElementById("noCustomText");
 
@@ -60,8 +61,9 @@ let customCardsStorage = [];
 
 init();
 
-function init() {
-    loadSavedCustomCards();
+async function init() {
+    renderBuiltInCardLibrary();
+    await loadSavedCustomCards();
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
@@ -73,6 +75,7 @@ function init() {
     setupColorPicker();
     setupToolCursorOverlay();
     setupCustomCardModal();
+    PecsLibrary.setupProfileControls({ onImported: reloadCustomCardLibrary });
     handledropdown();
     attachInitialCardListeners();
 
@@ -643,7 +646,7 @@ function saveCustomCard() {
     }
 }
 
-function createAndStoreCustomCard(name, imageSrc, audioSrc) {
+async function createAndStoreCustomCard(name, imageSrc, audioSrc) {
     const cardData = {
         id: `custom_${Date.now()}`,
         name: name,
@@ -651,25 +654,29 @@ function createAndStoreCustomCard(name, imageSrc, audioSrc) {
         audioSrc: audioSrc
     };
 
-    customCardsStorage.push(cardData);
     try {
-        localStorage.setItem('pecs_custom_cards', JSON.stringify(customCardsStorage));
+        customCardsStorage = await PecsLibrary.saveCustomCards(customCardsStorage.concat(cardData));
     } catch(e) {
-        console.warn('LocalStorage limit reached or disabled');
+        console.error('Failed saving custom card:', e);
+        alert('The card could not be saved to the active profile database.');
+        return;
     }
 
     addCustomCardToDOM(cardData);
     hideModal();
 }
 
-function removeCustomCard(cardId, element) {
+async function removeCustomCard(cardId, element) {
     if (!confirm('Are you sure you want to remove this custom card?')) return;
 
-    customCardsStorage = customCardsStorage.filter(c => c.id !== cardId);
     try {
-        localStorage.setItem('pecs_custom_cards', JSON.stringify(customCardsStorage));
+        customCardsStorage = await PecsLibrary.saveCustomCards(
+            customCardsStorage.filter(c => c.id !== cardId)
+        );
     } catch(e) {
-        console.error('Error updating localStorage:', e);
+        console.error('Error updating the active profile database:', e);
+        alert('The card could not be removed from the active profile database.');
+        return;
     }
 
     element.remove();
@@ -723,17 +730,57 @@ function addCustomCardToDOM(cardData) {
     customCategoryGroup.appendChild(cardBtn);
 }
 
-function loadSavedCustomCards() {
-    try {
-        const stored = localStorage.getItem('pecs_custom_cards');
-        if (stored) {
-            customCardsStorage = JSON.parse(stored);
-            if (customCardsStorage.length > 0 && noCustomText) {
-                noCustomText.style.display = 'none';
-            }
-            customCardsStorage.forEach(card => addCustomCardToDOM(card));
-        }
-    } catch(e) {
-        console.error('Failed loading stored custom cards:', e);
+async function loadSavedCustomCards() {
+    await reloadCustomCardLibrary();
+}
+
+async function reloadCustomCardLibrary() {
+    customCardsStorage = await PecsLibrary.getCustomCards();
+    customCategoryGroup.replaceChildren(noCustomText);
+    noCustomText.style.display = customCardsStorage.length > 0 ? 'none' : 'block';
+    customCardsStorage.forEach(card => addCustomCardToDOM(card));
+}
+
+function renderBuiltInCardLibrary() {
+    const textNoteButton = document.getElementById("buttoncustom");
+    let oldGroup = customCategoryGroup.nextElementSibling;
+    while (oldGroup && oldGroup !== textNoteButton) {
+        const nextGroup = oldGroup.nextElementSibling;
+        oldGroup.remove();
+        oldGroup = nextGroup;
     }
+
+    PecsLibrary.categories
+        .filter(category => category !== "Custom Cards")
+        .forEach(category => {
+            const dropdown = document.createElement("button");
+            dropdown.className = "dropdown justify-between items-center bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow";
+
+            const title = document.createElement("span");
+            title.textContent = category;
+            const arrow = document.createElement("span");
+            arrow.className = "text-xs";
+            arrow.textContent = "▼";
+            dropdown.append(title, arrow);
+
+            const group = document.createElement("div");
+            group.className = "dropdown-content gap-2 w-full pt-1";
+            PecsLibrary.builtInCards
+                .filter(card => card.category === category)
+                .forEach(card => {
+                    const cardButton = document.createElement("button");
+                    cardButton.className = "button";
+                    cardButton.setAttribute("data-custom-name", card.name);
+
+                    const image = document.createElement("img");
+                    image.src = card.image;
+                    image.alt = card.name;
+                    image.className = "rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30";
+                    cardButton.appendChild(image);
+                    group.appendChild(cardButton);
+                });
+
+            libraryMenu.insertBefore(dropdown, textNoteButton);
+            libraryMenu.insertBefore(group, textNoteButton);
+        });
 }
