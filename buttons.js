@@ -15,16 +15,9 @@ const toolCursor = document.getElementById("toolCursor");
 
 let isDrawing = false;
 let lineWidth = 3;
-let strokeColor = "#000000";
+let strokeColor = "#202421";
 
-// Color Picker Controls
-const sliderR = document.getElementById("sliderR");
-const sliderG = document.getElementById("sliderG");
-const sliderB = document.getElementById("sliderB");
-const valR = document.getElementById("valR");
-const valG = document.getElementById("valG");
-const valB = document.getElementById("valB");
-const colorPreviewHex = document.getElementById("colorPreviewHex");
+// Simple drawing controls
 const lineWidthSlider = document.getElementById("lineWidthSlider");
 const sizeLabel = document.getElementById("sizeLabel");
 const brushPreview = document.getElementById("brushPreview");
@@ -217,50 +210,25 @@ function toggleEraserMode() {
 
 function updateToolUI() {
     if (removeMode) {
-        activeToolBadge.textContent = "Eraser Mode";
-        activeToolBadge.className = "text-[10px] px-2 py-0.5 rounded bg-red-600 text-white font-normal";
-        removeBtn.classList.add('ring-2', 'ring-red-400');
-        drawBtn.classList.remove('ring-2', 'ring-blue-400');
+        activeToolBadge.textContent = "Erase";
+        activeToolBadge.className = "status-badge";
+        removeBtn.classList.add('active');
+        drawBtn.classList.remove('active');
     } else if (drawMode) {
-        activeToolBadge.textContent = "Draw Mode";
-        activeToolBadge.className = "text-[10px] px-2 py-0.5 rounded bg-blue-600 text-white font-normal";
-        drawBtn.classList.add('ring-2', 'ring-blue-400');
-        removeBtn.classList.remove('ring-2', 'ring-red-400');
+        activeToolBadge.textContent = "Draw";
+        activeToolBadge.className = "status-badge";
+        drawBtn.classList.add('active');
+        removeBtn.classList.remove('active');
     } else {
-        activeToolBadge.textContent = "Select / Drag";
-        activeToolBadge.className = "text-[10px] px-2 py-0.5 rounded bg-gray-600 text-white font-normal";
-        drawBtn.classList.remove('ring-2', 'ring-blue-400');
-        removeBtn.classList.remove('ring-2', 'ring-red-400');
+        activeToolBadge.textContent = "Move";
+        activeToolBadge.className = "status-badge";
+        drawBtn.classList.remove('active');
+        removeBtn.classList.remove('active');
         hideToolCursor();
     }
 }
 
 function setupColorPicker() {
-    function updateColorFromSliders() {
-        const r = parseInt(sliderR.value);
-        const g = parseInt(sliderG.value);
-        const b = parseInt(sliderB.value);
-        
-        valR.textContent = r;
-        valG.textContent = g;
-        valB.textContent = b;
-
-        const hexR = r.toString(16).padStart(2, '0');
-        const hexG = g.toString(16).padStart(2, '0');
-        const hexB = b.toString(16).padStart(2, '0');
-        strokeColor = `#${hexR}${hexG}${hexB}`;
-        
-        colorPreviewHex.textContent = strokeColor.toUpperCase();
-        colorPreviewHex.style.backgroundColor = strokeColor;
-        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-        colorPreviewHex.style.color = brightness > 128 ? 'black' : 'white';
-        brushPreview.style.backgroundColor = strokeColor;
-    }
-
-    sliderR.addEventListener('input', updateColorFromSliders);
-    sliderG.addEventListener('input', updateColorFromSliders);
-    sliderB.addEventListener('input', updateColorFromSliders);
-
     lineWidthSlider.addEventListener('input', (e) => {
         lineWidth = parseInt(e.target.value);
         sizeLabel.textContent = `Brush Size: ${lineWidth}px`;
@@ -275,17 +243,17 @@ function setupColorPicker() {
         });
     });
 
-    setHexColor('#000000');
+    setHexColor('#202421');
 }
 
 function setHexColor(hex) {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    sliderR.value = r;
-    sliderG.value = g;
-    sliderB.value = b;
-    sliderR.dispatchEvent(new Event('input'));
+    strokeColor = hex;
+    brushPreview.style.backgroundColor = hex;
+    presetColors.forEach(button => {
+        const selected = button.getAttribute('data-color') === hex;
+        button.classList.toggle('selected', selected);
+        button.setAttribute('aria-pressed', String(selected));
+    });
 }
 
 function clearAll() {
@@ -301,7 +269,7 @@ function attachInitialCardListeners() {
 
 function addImageToCanvas(button) {
     const moveDiv = document.createElement('div');
-    moveDiv.className = 'move rounded-[20px] border-[3px] border-indigo-400 bg-white shadow-lg flex flex-col items-center justify-between p-1';
+    moveDiv.className = 'move rounded-lg border bg-white flex flex-col items-center justify-between p-1';
     moveDiv.id = `Moveable${count}`;
 
     const canvasRect = canvas.getBoundingClientRect();
@@ -314,7 +282,7 @@ function addImageToCanvas(button) {
         moveDiv.style.width = '200px';
 
         const textfield = document.createElement('textarea');
-        textfield.className = 'customtext w-full h-full p-2 rounded text-black font-semibold text-center border-none focus:outline-none bg-yellow-50 resize-none';
+        textfield.className = 'customtext w-full h-full p-2 rounded text-black font-semibold text-center border-none focus:outline-none bg-white resize-none';
         textfield.placeholder = 'Type custom card note...';
         moveDiv.appendChild(textfield);
     } else {
@@ -922,7 +890,7 @@ function renderCardLibrary(cards, categoryOrder) {
 
     PecsLibrary.groupCardsByCategory(cards, categoryOrder).forEach((categoryCards, category) => {
         const dropdown = document.createElement("button");
-        dropdown.className = "dropdown justify-between items-center bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow";
+        dropdown.className = "dropdown library-category justify-between items-center font-semibold py-2 px-3 text-sm";
         dropdown.dataset.libraryGenerated = "true";
 
         const title = document.createElement("span");
@@ -941,27 +909,25 @@ function renderCardLibrary(cards, categoryOrder) {
 
         categoryCards.forEach(card => {
             const cardButton = document.createElement("button");
-            cardButton.className = !card.isDefault
-                ? "button relative flex flex-col items-center p-1 bg-indigo-900/60 hover:bg-indigo-800 rounded-xl border border-indigo-500/40 w-full transition shadow group"
-                : "button relative flex flex-col items-center";
+            cardButton.className = "button library-card relative flex flex-col items-center p-2 w-full group";
             cardButton.setAttribute("data-card-name", card.name);
             if (card.audio) cardButton.setAttribute("data-card-audio", card.audio);
 
             const image = document.createElement("img");
             image.src = card.image;
             image.alt = card.name;
-            image.className = "rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30";
+            image.className = "rounded-md w-[200px] h-[130px] object-contain bg-white border";
             cardButton.appendChild(image);
 
             const label = document.createElement("span");
-            label.className = "text-xs font-bold text-white mt-1 truncate w-[190px] text-center";
+            label.className = "text-xs font-semibold mt-2 truncate w-[190px] text-center";
             label.textContent = card.name;
             cardButton.appendChild(label);
 
             const deleteButton = document.createElement("div");
-            deleteButton.className = "delete-card absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md cursor-pointer transition transform hover:scale-110";
+            deleteButton.className = "delete-card absolute top-2 right-2 rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold cursor-pointer";
             deleteButton.title = "Remove card";
-            deleteButton.textContent = "🗑️";
+            deleteButton.textContent = "×";
             deleteButton.onclick = event => {
                 event.preventDefault();
                 event.stopPropagation();

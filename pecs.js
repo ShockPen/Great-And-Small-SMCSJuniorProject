@@ -1,12 +1,3 @@
-const colors = {
-    "Objects": "border-orange-400 bg-orange-50",
-    "Emotions": "border-blue-400 bg-blue-50",
-    "Actions": "border-green-400 bg-green-50",
-    "General Communication": "border-yellow-400 bg-yellow-50",
-    "Animals": "border-purple-400 bg-purple-50",
-    "Custom Cards": "border-emerald-400 bg-emerald-50"
-};
-
 const grid = document.getElementById("imageGrid");
 const categorySelect = document.getElementById("Categories");
 const sentenceStrip = document.getElementById("sentenceStrip");
@@ -85,20 +76,19 @@ function renderImages(category) {
     }
 
     filtered.forEach(item => {
-        const colorClass = colors[item.category] || "border-slate-300 bg-white";
         const safeName = escapeHtml(item.name);
         const safeImage = escapeHtml(item.image);
         
         const card = document.createElement("button");
-        card.className = `relative flex flex-col items-center justify-between p-2 border-4 rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-95 ${colorClass} w-[200px] h-[150px] flex-shrink-0 flex-grow-0 group`;
+        card.className = "sentence-card relative flex flex-col items-center justify-between p-2 border bg-white rounded-lg w-[200px] h-[150px] flex-shrink-0 flex-grow-0 group";
         
         let deleteBtnHTML = '';
-        deleteBtnHTML = `<div class="delete-card-btn absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md cursor-pointer transition transform hover:scale-110" title="Remove card">🗑️</div>`;
+        deleteBtnHTML = `<div class="delete-card-btn absolute top-2 right-2 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold cursor-pointer" title="Remove card">×</div>`;
 
         card.innerHTML = `
             ${deleteBtnHTML}
-            <img src="${safeImage}" alt="${safeName}" class="w-full h-[100px] object-contain rounded-xl shadow-inner pointer-events-none">
-            <span class="font-bold text-slate-800 uppercase text-xs tracking-wide truncate w-full text-center px-1 py-0.5 pointer-events-none">${safeName}</span>
+            <img src="${safeImage}" alt="${safeName}" class="w-full h-[100px] object-contain rounded-md pointer-events-none">
+            <span class="font-semibold text-slate-800 text-sm truncate w-full text-center px-1 py-0.5 pointer-events-none">${safeName}</span>
         `;
         
         card.onclick = (e) => {
@@ -123,13 +113,13 @@ function addToSentence(item) {
     const safeImage = escapeHtml(item.image);
 
     const wrapper = document.createElement("div");
-    wrapper.className = "relative flex-shrink-0 animate-in fade-in zoom-in duration-200";
+    wrapper.className = "relative flex-shrink-0";
     
     wrapper.innerHTML = `
-        <div class="w-[100px] h-[75px] bg-white border-2 border-blue-500 rounded-xl p-1 flex flex-col items-center justify-between cursor-pointer shadow-md overflow-hidden relative">
+        <div class="sentence-token w-[100px] h-[75px] bg-white border rounded-lg p-1 flex flex-col items-center justify-between cursor-pointer overflow-hidden relative">
             <img src="${safeImage}" class="h-[48px] w-full object-contain rounded-md">
-            <span class="text-[9px] font-bold uppercase text-center leading-none text-gray-800 truncate w-full px-0.5 pb-0.5">${safeName}</span>
-            <div class="absolute -top-1 -right-1 bg-red-500 hover:bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-md">✕</div>
+            <span class="text-[10px] font-semibold text-center leading-none text-gray-800 truncate w-full px-0.5 pb-0.5">${safeName}</span>
+            <div class="token-remove absolute -top-1 -right-1 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">×</div>
         </div>
     `;
 
@@ -147,9 +137,9 @@ function addCustomText(text) {
     const wrapper = document.createElement("div");
     wrapper.className = "relative flex-shrink-0";
     wrapper.innerHTML = `
-        <div class="w-[100px] h-[75px] px-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center justify-center cursor-pointer shadow-md font-bold text-xs text-center leading-tight relative overflow-hidden">
+        <div class="sentence-token text-token w-[100px] h-[75px] px-2 rounded-lg flex items-center justify-center cursor-pointer font-bold text-xs text-center leading-tight relative overflow-hidden">
             ${safeText}
-            <div class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold shadow-md">✕</div>
+            <div class="token-remove absolute -top-1 -right-1 text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-bold">×</div>
         </div>
     `;
 
