@@ -32,12 +32,15 @@ const presetColors = document.querySelectorAll(".preset-color");
 
 // Custom Card Modal Elements
 const uploadCardBtn = document.getElementById("uploadCardBtn");
+const manageCategoriesBtn = document.getElementById("manageCategoriesBtn");
+const resetDefaultsBtn = document.getElementById("resetDefaultsBtn");
 const customCardModal = document.getElementById("customCardModal");
 const closeModalBtn = document.getElementById("closeModalBtn");
 const cancelCardBtn = document.getElementById("cancelCardBtn");
 const saveCardBtn = document.getElementById("saveCardBtn");
 const cardImageInput = document.getElementById("cardImageInput");
 const cardNameInput = document.getElementById("cardNameInput");
+const cardCategoryInput = document.getElementById("cardCategoryInput");
 const cardAudioInput = document.getElementById("cardAudioInput");
 const cropArea = document.getElementById("cropArea");
 const cropCanvas = document.getElementById("cropCanvas");
@@ -47,8 +50,14 @@ const zoomInBtn = document.getElementById("zoomInBtn");
 const zoomOutBtn = document.getElementById("zoomOutBtn");
 const resetCropBtn = document.getElementById("resetCropBtn");
 const libraryMenu = document.getElementById("libraryMenu");
-const customCategoryGroup = document.getElementById("customCategoryGroup");
-const noCustomText = document.getElementById("noCustomText");
+const textNoteButton = document.getElementById("buttoncustom");
+const categoryManagerModal = document.getElementById("categoryManagerModal");
+const closeCategoryManagerBtn = document.getElementById("closeCategoryManagerBtn");
+const doneCategoryManagerBtn = document.getElementById("doneCategoryManagerBtn");
+const newCategoryInput = document.getElementById("newCategoryInput");
+const addCategoryBtn = document.getElementById("addCategoryBtn");
+const categoryManagerError = document.getElementById("categoryManagerError");
+const categoryEditorList = document.getElementById("categoryEditorList");
 
 let rawUploadedImage = null;
 let cropZoom = 1;
@@ -57,13 +66,10 @@ let cropPanY = 0;
 let isCroppingDrag = false;
 let startCropDragX = 0;
 let startCropDragY = 0;
-let customCardsStorage = [];
-
 init();
 
 async function init() {
-    renderBuiltInCardLibrary();
-    await loadSavedCustomCards();
+    await reloadCardLibrary();
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
@@ -75,8 +81,9 @@ async function init() {
     setupColorPicker();
     setupToolCursorOverlay();
     setupCustomCardModal();
-    PecsLibrary.setupProfileControls({ onImported: reloadCustomCardLibrary });
-    handledropdown();
+    setupCategoryManager();
+    resetDefaultsBtn.addEventListener("click", resetLibraryToDefaults);
+    PecsLibrary.setupProfileControls({ onImported: reloadCardLibrary });
     attachInitialCardListeners();
 
     updateToolUI();
@@ -288,13 +295,7 @@ function clearAll() {
 }
 
 function attachInitialCardListeners() {
-    const buttons = document.getElementsByClassName("button");
-    for (let button of buttons) {
-        button.onclick = (e) => {
-            if (e.target.classList.contains('delete-custom-card')) return;
-            addImageToCanvas(button);
-        };
-    }
+    textNoteButton.onclick = () => addImageToCanvas(textNoteButton);
     canvas.addEventListener('pointerdown', handleSoundButton);
 }
 
@@ -318,8 +319,8 @@ function addImageToCanvas(button) {
         moveDiv.appendChild(textfield);
     } else {
         const img = button.querySelector('img');
-        const customAudio = button.getAttribute('data-custom-audio');
-        const customName = button.getAttribute('data-custom-name');
+        const cardAudio = button.getAttribute('data-card-audio');
+        const cardName = button.getAttribute('data-card-name');
         
         const imageUrl = img ? img.src : '';
 
@@ -328,10 +329,10 @@ function addImageToCanvas(button) {
         objectImg.classList = "w-full h-[115px] object-contain bg-white/50 rounded-[14px]";
         moveDiv.appendChild(objectImg);
 
-        if (customName) {
+        if (cardName) {
             const labelSpan = document.createElement('span');
             labelSpan.className = "text-xs font-bold text-gray-800 tracking-tight truncate w-full text-center px-1";
-            labelSpan.textContent = customName;
+            labelSpan.textContent = cardName;
             moveDiv.appendChild(labelSpan);
         }
 
@@ -339,10 +340,8 @@ function addImageToCanvas(button) {
         soundBtn.className = 'sound';
         soundBtn.id = `sound${count}`;
         soundBtn.style.backgroundImage = 'url(./images/sound.png)';
-        soundBtn.setAttribute('data-image-url', imageUrl);
-        if (customAudio) {
-            soundBtn.setAttribute('data-custom-audio', customAudio);
-        }
+        soundBtn.setAttribute('data-card-name', cardName || '');
+        if (cardAudio) soundBtn.setAttribute('data-card-audio', cardAudio);
         moveDiv.appendChild(soundBtn);
     }
 
@@ -430,9 +429,9 @@ function handleSoundButton(e) {
     e.preventDefault();
     e.stopPropagation();
 
-    const customAudio = e.target.getAttribute('data-custom-audio');
-    if (customAudio) {
-        const audio = new Audio(customAudio);
+    const cardAudio = e.target.getAttribute('data-card-audio');
+    if (cardAudio) {
+        const audio = new Audio(cardAudio);
         audio.play().catch(err => {
             console.log('Audio playback failed, falling back to TTS:', err);
             speakCardName(e.target);
@@ -440,33 +439,18 @@ function handleSoundButton(e) {
         return;
     }
 
-    const imageUrl = e.target.getAttribute('data-image-url');
-    if (!imageUrl) return;
-
-    const filename = imageUrl.split('/').pop().replace(/\.[^.]+$/, '');
-    const audioPath = `./audio/${filename}.mp3`;
-
-    const audio = new Audio(audioPath);
-    audio.play().catch(err => {
-        console.log('Standard audio missing/failed, using SpeechSynthesis TTS:', err);
-        speakCardName(e.target);
-    });
+    speakCardName(e.target);
 }
 
 function speakCardName(soundBtn) {
     const parentCard = soundBtn.closest('.move');
     if (!parentCard) return;
 
-    let textToSpeak = soundBtn.getAttribute('data-custom-name') || '';
+    let textToSpeak = soundBtn.getAttribute('data-card-name') || '';
     if (!textToSpeak) {
         const labelSpan = parentCard.querySelector('span');
         if (labelSpan) {
             textToSpeak = labelSpan.textContent;
-        } else {
-            const imageUrl = soundBtn.getAttribute('data-image-url');
-            if (imageUrl) {
-                textToSpeak = imageUrl.split('/').pop().replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
-            }
         }
     }
 
@@ -478,23 +462,10 @@ function speakCardName(soundBtn) {
     }
 }
 
-function handledropdown() {
-    const dropdowns = document.getElementsByClassName("dropdown");
-    for (let i = 0; i < dropdowns.length; i++) {
-        dropdowns[i].onclick = function() {
-            const dropdownContent = this.nextElementSibling;
-            if (dropdownContent.style.display === "flex") {
-                dropdownContent.style.display = "none";
-            } else {
-                dropdownContent.style.display = "flex";
-            }
-        };
-    }
-}
-
 // Custom Card Modal & Image Crop Logic
 function setupCustomCardModal() {
-    uploadCardBtn.addEventListener('click', () => {
+    uploadCardBtn.addEventListener('click', async () => {
+        await populateCardCategoryOptions();
         customCardModal.classList.remove('hidden');
     });
 
@@ -579,6 +550,259 @@ function hideModal() {
     resetCropState();
 }
 
+async function populateCardCategoryOptions(preferredCategory = cardCategoryInput.value) {
+    const settings = await PecsLibrary.getCategorySettings();
+    cardCategoryInput.replaceChildren();
+    settings.categories.forEach(category => {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = category;
+        cardCategoryInput.appendChild(option);
+    });
+    cardCategoryInput.value = settings.categories.includes(preferredCategory)
+        ? preferredCategory
+        : (settings.categories.includes("Custom Cards") ? "Custom Cards" : settings.categories[0]);
+}
+
+function setupCategoryManager() {
+    manageCategoriesBtn.addEventListener("click", openCategoryManager);
+    closeCategoryManagerBtn.addEventListener("click", hideCategoryManager);
+    doneCategoryManagerBtn.addEventListener("click", hideCategoryManager);
+    addCategoryBtn.addEventListener("click", addCategory);
+    newCategoryInput.addEventListener("keydown", event => {
+        if (event.key === "Enter") addCategory();
+    });
+    categoryManagerModal.addEventListener("click", event => {
+        if (event.target === categoryManagerModal) hideCategoryManager();
+    });
+}
+
+async function openCategoryManager() {
+    categoryManagerModal.classList.remove("hidden");
+    newCategoryInput.value = "";
+    clearCategoryManagerError();
+    await renderCategoryManager();
+}
+
+function hideCategoryManager() {
+    categoryManagerModal.classList.add("hidden");
+    clearCategoryManagerError();
+}
+
+function showCategoryManagerError(message) {
+    categoryManagerError.textContent = message;
+    categoryManagerError.classList.remove("hidden");
+}
+
+function clearCategoryManagerError() {
+    categoryManagerError.textContent = "";
+    categoryManagerError.classList.add("hidden");
+}
+
+async function resetLibraryToDefaults() {
+    if (!window.confirm("Reset every card and category to the original defaults? Imported and custom cards will be removed.")) return;
+    resetDefaultsBtn.disabled = true;
+    try {
+        await PecsLibrary.resetToDefaults();
+        await reloadCardLibrary();
+        await populateCardCategoryOptions();
+        if (!categoryManagerModal.classList.contains("hidden")) await renderCategoryManager();
+        window.alert("The original default cards and categories have been restored.");
+    } catch (error) {
+        console.error("Failed resetting the card library:", error);
+        window.alert("The card library could not be reset.");
+    } finally {
+        resetDefaultsBtn.disabled = false;
+    }
+}
+
+async function applyCategorySettings(settings) {
+    try {
+        settings.assignments = {};
+        await PecsLibrary.saveCategorySettings(settings);
+        await reloadCardLibrary();
+        await populateCardCategoryOptions();
+        clearCategoryManagerError();
+        await renderCategoryManager();
+        return true;
+    } catch (error) {
+        console.error("Failed saving category settings:", error);
+        showCategoryManagerError("The category changes could not be saved.");
+        return false;
+    }
+}
+
+async function applyLibraryState(cards, settings) {
+    try {
+        await PecsLibrary.saveAllCards(cards);
+        await PecsLibrary.saveCategorySettings(settings);
+        await reloadCardLibrary();
+        await populateCardCategoryOptions();
+        clearCategoryManagerError();
+        await renderCategoryManager();
+        return true;
+    } catch (error) {
+        console.error("Failed saving the card library:", error);
+        showCategoryManagerError("The card or category changes could not be saved.");
+        return false;
+    }
+}
+
+async function addCategory() {
+    const name = newCategoryInput.value.trim();
+    if (!name) {
+        showCategoryManagerError("Enter a category name first.");
+        return;
+    }
+
+    const settings = await PecsLibrary.getCategorySettings();
+    if (settings.categories.some(category => category.toLowerCase() === name.toLowerCase())) {
+        showCategoryManagerError(`A category named “${name}” already exists.`);
+        return;
+    }
+
+    settings.categories.push(name);
+    if (await applyCategorySettings(settings)) newCategoryInput.value = "";
+}
+
+async function renameCategory(oldName, newName, cards, settings) {
+    const name = newName.trim();
+    if (!name) {
+        showCategoryManagerError("Category names cannot be blank.");
+        return;
+    }
+    if (name === oldName) return;
+    if (settings.categories.some(category => category !== oldName && category.toLowerCase() === name.toLowerCase())) {
+        showCategoryManagerError(`A category named “${name}” already exists.`);
+        return;
+    }
+
+    const categoryIndex = settings.categories.indexOf(oldName);
+    settings.categories[categoryIndex] = name;
+    cards.forEach(card => {
+        if (card.category === oldName) card.category = name;
+    });
+    settings.assignments = {};
+    await applyLibraryState(cards, settings);
+}
+
+async function deleteCategory(category, settings) {
+    if (!window.confirm(`Delete the empty “${category}” category?`)) return;
+    settings.categories = settings.categories.filter(name => name !== category);
+    settings.assignments = {};
+    await applyCategorySettings(settings);
+}
+
+async function moveCategory(category, direction, settings) {
+    const currentIndex = settings.categories.indexOf(category);
+    const nextIndex = currentIndex + direction;
+    if (currentIndex < 0 || nextIndex < 0 || nextIndex >= settings.categories.length) return;
+    [settings.categories[currentIndex], settings.categories[nextIndex]] = [
+        settings.categories[nextIndex],
+        settings.categories[currentIndex]
+    ];
+    await applyCategorySettings(settings);
+}
+
+async function renderCategoryManager() {
+    const [settings, cards] = await Promise.all([
+        PecsLibrary.getCategorySettings(),
+        PecsLibrary.getAllCards()
+    ]);
+    cards.forEach(card => {
+        if (!settings.categories.includes(card.category)) settings.categories.push(card.category);
+    });
+    categoryEditorList.replaceChildren();
+
+    settings.categories.forEach(category => {
+        const categoryCards = cards.filter(card => card.category === category);
+        const section = document.createElement("section");
+        section.className = "bg-indigo-950/70 border border-indigo-700/60 rounded-xl p-3 flex flex-col gap-3";
+
+        const heading = document.createElement("div");
+        heading.className = "flex flex-wrap items-center gap-2";
+        const nameInput = document.createElement("input");
+        nameInput.value = category;
+        nameInput.className = "flex-1 min-w-[220px] px-3 py-2 bg-slate-900 border border-indigo-600 rounded-lg text-sm font-semibold text-white focus:outline-none focus:border-indigo-400";
+        const count = document.createElement("span");
+        count.className = "text-xs text-indigo-300";
+        count.textContent = `${categoryCards.length} card${categoryCards.length === 1 ? "" : "s"}`;
+        const renameButton = document.createElement("button");
+        renameButton.className = "px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg";
+        renameButton.textContent = "Rename";
+        renameButton.onclick = () => renameCategory(category, nameInput.value, cards, settings);
+        nameInput.addEventListener("keydown", event => {
+            if (event.key === "Enter") renameButton.click();
+        });
+        const deleteButton = document.createElement("button");
+        deleteButton.className = "px-3 py-2 bg-rose-600 hover:bg-rose-500 disabled:bg-slate-700 disabled:text-slate-400 text-white text-xs font-semibold rounded-lg";
+        deleteButton.textContent = "Delete";
+        deleteButton.disabled = categoryCards.length > 0 || settings.categories.length === 1;
+        deleteButton.title = categoryCards.length > 0 ? "Move all cards out of this category before deleting it." : "Delete category";
+        deleteButton.onclick = () => deleteCategory(category, settings);
+        const moveUpButton = document.createElement("button");
+        moveUpButton.className = "px-3 py-2 bg-indigo-700 hover:bg-indigo-600 disabled:bg-slate-700 disabled:text-slate-400 text-white text-xs font-semibold rounded-lg";
+        moveUpButton.textContent = "↑";
+        moveUpButton.title = "Move category up";
+        moveUpButton.disabled = settings.categories.indexOf(category) === 0;
+        moveUpButton.onclick = () => moveCategory(category, -1, settings);
+        const moveDownButton = document.createElement("button");
+        moveDownButton.className = moveUpButton.className;
+        moveDownButton.textContent = "↓";
+        moveDownButton.title = "Move category down";
+        moveDownButton.disabled = settings.categories.indexOf(category) === settings.categories.length - 1;
+        moveDownButton.onclick = () => moveCategory(category, 1, settings);
+        heading.append(moveUpButton, moveDownButton, nameInput, count, renameButton, deleteButton);
+        section.appendChild(heading);
+
+        if (categoryCards.length === 0) {
+            const emptyMessage = document.createElement("p");
+            emptyMessage.className = "text-xs italic text-slate-400";
+            emptyMessage.textContent = "No cards in this category yet.";
+            section.appendChild(emptyMessage);
+        } else {
+            const cardList = document.createElement("div");
+            cardList.className = "grid grid-cols-1 md:grid-cols-2 gap-2";
+            categoryCards.forEach(card => {
+                const row = document.createElement("div");
+                row.className = "flex items-center gap-2 bg-slate-900/80 rounded-lg p-2 border border-slate-700";
+                const image = document.createElement("img");
+                image.src = card.image;
+                image.alt = "";
+                image.className = "w-12 h-10 object-contain rounded bg-white";
+                const label = document.createElement("div");
+                label.className = "flex-1 min-w-0";
+                const cardName = document.createElement("p");
+                cardName.className = "text-xs font-semibold text-white truncate";
+                cardName.textContent = card.name;
+                const cardType = document.createElement("p");
+                cardType.className = "text-[10px] text-slate-400";
+                cardType.textContent = card.isDefault ? "Default card" : "Profile card";
+                label.append(cardName, cardType);
+                const destination = document.createElement("select");
+                destination.className = "max-w-[180px] px-2 py-1.5 bg-indigo-900 border border-indigo-600 rounded text-xs text-white";
+                settings.categories.forEach(categoryName => {
+                    const option = document.createElement("option");
+                    option.value = categoryName;
+                    option.textContent = categoryName;
+                    destination.appendChild(option);
+                });
+                destination.value = category;
+                destination.onchange = async () => {
+                    card.category = destination.value;
+                    settings.assignments = {};
+                    await applyLibraryState(cards, settings);
+                };
+                row.append(image, label, destination);
+                cardList.appendChild(row);
+            });
+            section.appendChild(cardList);
+        }
+
+        categoryEditorList.appendChild(section);
+    });
+}
+
 function handleImageUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -624,6 +848,7 @@ function renderCropPreview() {
 
 function saveCustomCard() {
     const cardName = cardNameInput.value.trim() || 'Custom Card';
+    const cardCategory = cardCategoryInput.value || 'Custom Cards';
     let croppedImageDataUrl = '';
 
     if (cropCanvas.width > 0 && !cropArea.classList.contains('hidden')) {
@@ -638,149 +863,119 @@ function saveCustomCard() {
         const audioReader = new FileReader();
         audioReader.onload = (e) => {
             const audioDataUrl = e.target.result;
-            createAndStoreCustomCard(cardName, croppedImageDataUrl, audioDataUrl);
+            createAndStoreCustomCard(cardName, cardCategory, croppedImageDataUrl, audioDataUrl);
         };
         audioReader.readAsDataURL(audioFile);
     } else {
-        createAndStoreCustomCard(cardName, croppedImageDataUrl, null);
+        createAndStoreCustomCard(cardName, cardCategory, croppedImageDataUrl, null);
     }
 }
 
-async function createAndStoreCustomCard(name, imageSrc, audioSrc) {
+async function createAndStoreCustomCard(name, category, image, audio) {
     const cardData = {
         id: `custom_${Date.now()}`,
-        name: name,
-        imageSrc: imageSrc,
-        audioSrc: audioSrc
+        name,
+        category,
+        image,
+        audio
     };
 
     try {
-        customCardsStorage = await PecsLibrary.saveCustomCards(customCardsStorage.concat(cardData));
+        const cards = await PecsLibrary.getAllCards();
+        await PecsLibrary.saveAllCards(cards.concat(cardData));
     } catch(e) {
         console.error('Failed saving custom card:', e);
         alert('The card could not be saved to the active profile database.');
         return;
     }
 
-    addCustomCardToDOM(cardData);
+    await reloadCardLibrary();
     hideModal();
 }
 
-async function removeCustomCard(cardId, element) {
-    if (!confirm('Are you sure you want to remove this custom card?')) return;
+async function removeCard(cardId) {
+    if (!confirm('Are you sure you want to remove this card?')) return;
 
     try {
-        customCardsStorage = await PecsLibrary.saveCustomCards(
-            customCardsStorage.filter(c => c.id !== cardId)
+        await PecsLibrary.saveAllCards(
+            (await PecsLibrary.getAllCards()).filter(card => card.id !== cardId)
         );
     } catch(e) {
-        console.error('Error updating the active profile database:', e);
+        console.error('Error removing the card from the active profile database:', e);
         alert('The card could not be removed from the active profile database.');
         return;
     }
 
-    element.remove();
-
-    if (customCardsStorage.length === 0 && noCustomText) {
-        noCustomText.style.display = 'block';
-    }
+    await reloadCardLibrary();
 }
 
-function addCustomCardToDOM(cardData) {
-    if (noCustomText) {
-        noCustomText.style.display = 'none';
-    }
-
-    const cardBtn = document.createElement('button');
-    cardBtn.className = 'button relative flex flex-col items-center p-1 bg-indigo-900/60 hover:bg-indigo-800 rounded-xl border border-indigo-500/40 w-full transition shadow group';
-    cardBtn.setAttribute('data-custom-name', cardData.name);
-    cardBtn.setAttribute('data-card-id', cardData.id);
-    if (cardData.audioSrc) {
-        cardBtn.setAttribute('data-custom-audio', cardData.audioSrc);
-    }
-
-    const img = document.createElement('img');
-    img.src = cardData.imageSrc;
-    img.className = "rounded-[12px] w-[200px] h-[125px] object-contain bg-black/20";
-
-    const label = document.createElement('span');
-    label.className = "text-xs font-bold text-white mt-1 truncate w-[190px] text-center";
-    label.textContent = cardData.name;
-
-    // Delete custom card trash icon button
-    const deleteBtn = document.createElement('div');
-    deleteBtn.className = 'delete-custom-card absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md cursor-pointer transition transform hover:scale-110';
-    deleteBtn.title = 'Remove custom card';
-    deleteBtn.innerHTML = '🗑️';
-    deleteBtn.onclick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        removeCustomCard(cardData.id, cardBtn);
-    };
-
-    cardBtn.appendChild(img);
-    cardBtn.appendChild(label);
-    cardBtn.appendChild(deleteBtn);
-
-    cardBtn.onclick = (e) => {
-        if (e.target.classList.contains('delete-custom-card')) return;
-        addImageToCanvas(cardBtn);
-    };
-
-    customCategoryGroup.appendChild(cardBtn);
+async function reloadCardLibrary() {
+    const [cards, settings] = await Promise.all([
+        PecsLibrary.getAllCards(),
+        PecsLibrary.getCategorySettings()
+    ]);
+    renderCardLibrary(cards, settings.categories);
 }
 
-async function loadSavedCustomCards() {
-    await reloadCustomCardLibrary();
-}
+function renderCardLibrary(cards, categoryOrder) {
+    libraryMenu.querySelectorAll('[data-library-generated]').forEach(element => element.remove());
 
-async function reloadCustomCardLibrary() {
-    customCardsStorage = await PecsLibrary.getCustomCards();
-    customCategoryGroup.replaceChildren(noCustomText);
-    noCustomText.style.display = customCardsStorage.length > 0 ? 'none' : 'block';
-    customCardsStorage.forEach(card => addCustomCardToDOM(card));
-}
+    PecsLibrary.groupCardsByCategory(cards, categoryOrder).forEach((categoryCards, category) => {
+        const dropdown = document.createElement("button");
+        dropdown.className = "dropdown justify-between items-center bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow";
+        dropdown.dataset.libraryGenerated = "true";
 
-function renderBuiltInCardLibrary() {
-    const textNoteButton = document.getElementById("buttoncustom");
-    let oldGroup = customCategoryGroup.nextElementSibling;
-    while (oldGroup && oldGroup !== textNoteButton) {
-        const nextGroup = oldGroup.nextElementSibling;
-        oldGroup.remove();
-        oldGroup = nextGroup;
-    }
+        const title = document.createElement("span");
+        title.textContent = category;
+        const arrow = document.createElement("span");
+        arrow.className = "text-xs";
+        arrow.textContent = "▼";
+        dropdown.append(title, arrow);
 
-    PecsLibrary.categories
-        .filter(category => category !== "Custom Cards")
-        .forEach(category => {
-            const dropdown = document.createElement("button");
-            dropdown.className = "dropdown justify-between items-center bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow";
+        const group = document.createElement("div");
+        group.className = "dropdown-content gap-2 w-full pt-1";
+        group.dataset.libraryGenerated = "true";
+        dropdown.onclick = () => {
+            group.style.display = group.style.display === "flex" ? "none" : "flex";
+        };
 
-            const title = document.createElement("span");
-            title.textContent = category;
-            const arrow = document.createElement("span");
-            arrow.className = "text-xs";
-            arrow.textContent = "▼";
-            dropdown.append(title, arrow);
+        categoryCards.forEach(card => {
+            const cardButton = document.createElement("button");
+            cardButton.className = !card.isDefault
+                ? "button relative flex flex-col items-center p-1 bg-indigo-900/60 hover:bg-indigo-800 rounded-xl border border-indigo-500/40 w-full transition shadow group"
+                : "button relative flex flex-col items-center";
+            cardButton.setAttribute("data-card-name", card.name);
+            if (card.audio) cardButton.setAttribute("data-card-audio", card.audio);
 
-            const group = document.createElement("div");
-            group.className = "dropdown-content gap-2 w-full pt-1";
-            PecsLibrary.builtInCards
-                .filter(card => card.category === category)
-                .forEach(card => {
-                    const cardButton = document.createElement("button");
-                    cardButton.className = "button";
-                    cardButton.setAttribute("data-custom-name", card.name);
+            const image = document.createElement("img");
+            image.src = card.image;
+            image.alt = card.name;
+            image.className = "rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30";
+            cardButton.appendChild(image);
 
-                    const image = document.createElement("img");
-                    image.src = card.image;
-                    image.alt = card.name;
-                    image.className = "rounded-[15px] w-[200px] h-[130px] object-contain bg-black/20 shadow border border-blue-400/30";
-                    cardButton.appendChild(image);
-                    group.appendChild(cardButton);
-                });
+            const label = document.createElement("span");
+            label.className = "text-xs font-bold text-white mt-1 truncate w-[190px] text-center";
+            label.textContent = card.name;
+            cardButton.appendChild(label);
 
-            libraryMenu.insertBefore(dropdown, textNoteButton);
-            libraryMenu.insertBefore(group, textNoteButton);
+            const deleteButton = document.createElement("div");
+            deleteButton.className = "delete-card absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md cursor-pointer transition transform hover:scale-110";
+            deleteButton.title = "Remove card";
+            deleteButton.textContent = "🗑️";
+            deleteButton.onclick = event => {
+                event.preventDefault();
+                event.stopPropagation();
+                removeCard(card.id);
+            };
+            cardButton.appendChild(deleteButton);
+
+            cardButton.onclick = event => {
+                if (!event.target.classList.contains("delete-card")) addImageToCanvas(cardButton);
+            };
+            group.appendChild(cardButton);
         });
+
+        libraryMenu.insertBefore(dropdown, textNoteButton);
+        libraryMenu.insertBefore(group, textNoteButton);
+    });
 }

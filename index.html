@@ -17,6 +17,12 @@
             <span class="text-xl font-bold tracking-wide text-yellow-300">PECS Interactive Studio</span>
         </div>
         <div class="flex items-center gap-3">
+            <button id="manageCategoriesBtn" class="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow transition">
+                Manage Categories
+            </button>
+            <button id="resetDefaultsBtn" class="bg-slate-600 hover:bg-slate-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow transition">
+                Reset to Defaults
+            </button>
             <button id="exportProfileBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg text-sm font-semibold shadow transition">
                 Export Profile ZIP
             </button>
@@ -106,16 +112,7 @@
 
             <!-- Library Cards Accordion Menu -->
             <div class="menu flex flex-col gap-2 overflow-y-auto pr-1" id="libraryMenu">
-                <button class="dropdown justify-between items-center bg-blue-700 hover:bg-blue-600 text-white font-semibold py-2 px-3 rounded-lg text-sm shadow">
-                    <span>Custom Cards</span>
-                    <span class="text-xs">▼</span>
-                </button>
-                <div class="dropdown-content gap-2 w-full pt-1" id="customCategoryGroup">
-                    <!-- Dynamic custom cards inserted here -->
-                    <p class="text-xs text-indigo-300 italic p-2 text-center" id="noCustomText">No custom cards uploaded yet.</p>
-                </div>
-
-                <!-- Built-in category groups are loaded from card-library.js -->
+                <!-- Category folds and cards are generated from the card list. -->
 
                 <button class="button bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg w-full py-2 font-medium text-xs shadow mt-1" id="buttoncustom">
                     Text Note Card
@@ -170,9 +167,15 @@
                 <input type="text" id="cardNameInput" placeholder="e.g. My Favorite Toy" class="px-3 py-2 bg-indigo-950 border border-indigo-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-400">
             </div>
 
-            <!-- Step 3: Audio File attachment -->
+            <!-- Step 3: Category -->
             <div class="flex flex-col gap-1">
-                <label class="text-xs font-semibold text-indigo-200">3. Sound / Audio File (Optional)</label>
+                <label class="text-xs font-semibold text-indigo-200" for="cardCategoryInput">3. Category</label>
+                <select id="cardCategoryInput" class="px-3 py-2 bg-indigo-950 border border-indigo-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-400"></select>
+            </div>
+
+            <!-- Step 4: Audio File attachment -->
+            <div class="flex flex-col gap-1">
+                <label class="text-xs font-semibold text-indigo-200">4. Sound / Audio File (Optional)</label>
                 <input type="file" id="cardAudioInput" accept="audio/*" class="text-xs text-indigo-300 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500">
             </div>
 
@@ -180,6 +183,31 @@
             <div class="flex justify-end gap-2 border-t border-indigo-700/60 pt-3 mt-1">
                 <button id="cancelCardBtn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold rounded-lg">Cancel</button>
                 <button id="saveCardBtn" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg shadow">Save & Add Card</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Management Modal -->
+    <div id="categoryManagerModal" class="modal-overlay hidden">
+        <div class="modal-content flex flex-col gap-4" style="max-width: 900px;">
+            <div class="flex justify-between items-center border-b border-indigo-700/60 pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-yellow-300">Manage Categories</h3>
+                    <p class="text-xs text-indigo-200 mt-1">Rename categories or move cards using the selectors below.</p>
+                </div>
+                <button id="closeCategoryManagerBtn" class="text-gray-400 hover:text-white text-xl font-bold" aria-label="Close category manager">&times;</button>
+            </div>
+
+            <div class="flex gap-2">
+                <input id="newCategoryInput" type="text" placeholder="New category name" class="flex-1 px-3 py-2 bg-indigo-950 border border-indigo-700 rounded-lg text-sm text-white focus:outline-none focus:border-indigo-400">
+                <button id="addCategoryBtn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded-lg shadow">Add Category</button>
+            </div>
+            <p id="categoryManagerError" class="hidden text-xs text-rose-300 bg-rose-950/60 border border-rose-700/60 rounded-lg px-3 py-2"></p>
+
+            <div id="categoryEditorList" class="flex flex-col gap-4"></div>
+
+            <div class="flex justify-end border-t border-indigo-700/60 pt-3">
+                <button id="doneCategoryManagerBtn" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-lg shadow">Done</button>
             </div>
         </div>
     </div>

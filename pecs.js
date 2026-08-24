@@ -16,6 +16,9 @@ const customTextInput = document.getElementById("customText");
 const addTextBtn = document.getElementById("addTextBtn");
 
 let sentenceWords = [];
+let allCards = [];
+let playbackVersion = 0;
+let currentAudio = null;
 
 function escapeHtml(value) {
     return String(value)
@@ -26,22 +29,36 @@ function escapeHtml(value) {
         .replaceAll("'", "&#039;");
 }
 
-function populateCategories() {
+function populateCategories(cards, preferredCategory, categoryOrder) {
+    const categories = PecsLibrary.getCategories(cards, categoryOrder);
     categorySelect.replaceChildren();
-    PecsLibrary.categories.forEach(category => {
+    categories.forEach(category => {
         const option = document.createElement("option");
         option.value = category;
         option.textContent = category;
         categorySelect.appendChild(option);
     });
+    categorySelect.value = categories.includes(preferredCategory)
+        ? preferredCategory
+        : (categories[0] || "");
 }
 
-async function removeCustomCard(cardId) {
-    if (!confirm('Are you sure you want to remove this custom card?')) return;
+async function reloadCardLibrary(preferredCategory = categorySelect.value) {
+    const [cards, settings] = await Promise.all([
+        PecsLibrary.getAllCards(),
+        PecsLibrary.getCategorySettings()
+    ]);
+    allCards = cards;
+    populateCategories(allCards, preferredCategory, settings.categories);
+    renderImages(categorySelect.value);
+}
+
+async function removeCard(cardId) {
+    if (!confirm('Are you sure you want to remove this card?')) return;
 
     try {
-        await PecsLibrary.saveCustomCards(
-            (await PecsLibrary.getCustomCards()).filter(card => card.id !== cardId)
+        await PecsLibrary.saveAllCards(
+            (await PecsLibrary.getAllCards()).filter(card => card.id !== cardId)
         );
     } catch (error) {
         console.error('Error updating the active profile database:', error);
@@ -49,17 +66,21 @@ async function removeCustomCard(cardId) {
         return;
     }
 
-    renderImages(categorySelect.value);
+    await reloadCardLibrary(categorySelect.value);
 }
 
 // RENDER IMAGES
-async function renderImages(category) {
+function renderImages(category) {
     grid.innerHTML = "";
-    
-    const filtered = (await PecsLibrary.getAllCards()).filter(item => item.category === category);
+    const filtered = allCards.filter(item => item.category === category);
 
     if (filtered.length === 0) {
-        grid.innerHTML = `<p class="text-slate-400 italic text-sm mt-8">No cards available in "${category}". Upload custom cards in PECS Studio!</p>`;
+        const message = document.createElement("p");
+        message.className = "text-slate-400 italic text-sm mt-8";
+        message.textContent = category
+            ? `No cards available in "${category}". Upload custom cards in PECS Studio!`
+            : "No cards are available. Upload custom cards in PECS Studio!";
+        grid.appendChild(message);
         return;
     }
 
@@ -72,9 +93,7 @@ async function renderImages(category) {
         card.className = `relative flex flex-col items-center justify-between p-2 border-4 rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-95 ${colorClass} w-[200px] h-[150px] flex-shrink-0 flex-grow-0 group`;
         
         let deleteBtnHTML = '';
-        if (item.category === "Custom Cards" && item.id) {
-            deleteBtnHTML = `<div class="delete-card-btn absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md cursor-pointer transition transform hover:scale-110" title="Remove custom card">🗑️</div>`;
-        }
+        deleteBtnHTML = `<div class="delete-card-btn absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold shadow-md cursor-pointer transition transform hover:scale-110" title="Remove card">🗑️</div>`;
 
         card.innerHTML = `
             ${deleteBtnHTML}
@@ -86,7 +105,7 @@ async function renderImages(category) {
             if (e.target.classList.contains('delete-card-btn')) {
                 e.preventDefault();
                 e.stopPropagation();
-                removeCustomCard(item.id);
+                removeCard(item.id);
                 return;
             }
             addToSentence(item);
@@ -99,7 +118,7 @@ async function renderImages(category) {
 // ADD TO STRIP
 function addToSentence(item) {
     const wordId = Date.now();
-    sentenceWords.push({ id: wordId, name: item.name, audioSrc: item.audioSrc });
+    sentenceWords.push({ id: wordId, name: item.name, audio: item.audio });
     const safeName = escapeHtml(item.name);
     const safeImage = escapeHtml(item.image);
 
@@ -148,26 +167,73 @@ categorySelect.addEventListener("change", () => renderImages(categorySelect.valu
 clearBtn.addEventListener("click", () => {
     sentenceStrip.innerHTML = "";
     sentenceWords = [];
-    speechSynthesis.cancel();
+    stopSentencePlayback();
 });
 
-playBtn.addEventListener("click", () => {
+playBtn.addEventListener("click", async () => {
     if (sentenceWords.length === 0) return;
-    const textToSpeak = sentenceWords.map(w => w.name).join(" ");
-    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.rate = 0.8; 
-    speechSynthesis.cancel();
-    speechSynthesis.speak(utterance);
+    const version = ++playbackVersion;
+    stopActiveMedia();
+    playBtn.disabled = true;
+
+    try {
+        for (const word of sentenceWords.slice()) {
+            if (version !== playbackVersion) break;
+            try {
+                if (word.audio) await playAudio(word.audio);
+                else await speakWord(word.name);
+            } catch (error) {
+                if (version === playbackVersion) await speakWord(word.name);
+            }
+        }
+    } finally {
+        if (version === playbackVersion) playBtn.disabled = false;
+    }
 });
+
+function playAudio(audioSource) {
+    return new Promise((resolve, reject) => {
+        currentAudio = new Audio(audioSource);
+        currentAudio.addEventListener("ended", resolve, { once: true });
+        currentAudio.addEventListener("error", reject, { once: true });
+        currentAudio.play().catch(reject);
+    });
+}
+
+function speakWord(text) {
+    return new Promise(resolve => {
+        if (!("speechSynthesis" in window)) {
+            resolve();
+            return;
+        }
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.8;
+        utterance.onend = resolve;
+        utterance.onerror = resolve;
+        speechSynthesis.speak(utterance);
+    });
+}
+
+function stopActiveMedia() {
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+    }
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
+}
+
+function stopSentencePlayback() {
+    playbackVersion++;
+    stopActiveMedia();
+    playBtn.disabled = false;
+}
 
 addTextBtn.addEventListener("click", () => {
     addCustomText(customTextInput.value);
     customTextInput.value = "";
 });
 
-// Initial Render
-populateCategories();
 PecsLibrary.setupProfileControls({
-    onImported: () => renderImages(categorySelect.value)
+    onImported: () => reloadCardLibrary(categorySelect.value)
 });
-renderImages("Objects");
+reloadCardLibrary("Objects");
