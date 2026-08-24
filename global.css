@@ -20,6 +20,9 @@ body {
     font-family: Arial, Helvetica, sans-serif;
 }
 
+.studio-page { height: 100dvh; }
+.studio-layout { height: calc(100dvh - 55px); }
+
 button, input, select, textarea { font: inherit; }
 
 :is(button, a, input, select, textarea, summary):focus-visible {
@@ -141,7 +144,17 @@ input[type="range"] { accent-color: var(--accent); }
     box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--accent);
 }
 
-#canvas { background: var(--surface); }
+#canvas {
+    min-width: 0;
+    min-height: 0;
+    background: var(--surface);
+}
+
+#draw,
+#cropCanvas {
+    display: block;
+    touch-action: none;
+}
 
 .move {
     position: absolute;
@@ -150,7 +163,12 @@ input[type="range"] { accent-color: var(--accent); }
     background-size: 100% 100%;
     border-color: var(--border-strong);
     cursor: move;
+    user-select: none;
+    -webkit-user-select: none;
 }
+
+.move img { pointer-events: none; }
+.move .customtext { touch-action: manipulation; }
 
 .sound {
     position: absolute;
@@ -294,14 +312,40 @@ input[type="range"] { accent-color: var(--accent); }
 .text-token { color: #fff; background: var(--accent); }
 
 @media (max-width: 760px) {
-    .sidebar { width: 225px !important; padding: 12px; }
+    .studio-layout { flex-direction: column; }
+    .studio-page .sidebar {
+        width: 100% !important;
+        height: auto;
+        max-height: 44dvh;
+        padding: 10px 12px;
+        border-right: 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .studio-page #canvas { min-height: 0; }
     .app-header { padding: 0 12px; }
+    .quiet-button { min-height: 44px; }
+    .preset-row {
+        grid-template-columns: repeat(5, 40px);
+        justify-content: space-between;
+    }
+    .preset-color { width: 40px; height: 40px; }
+    .modal-overlay { padding: 10px; }
+    .modal-content { width: 100%; max-height: calc(100dvh - 20px); padding: 16px; }
+    .sentence-workspace { max-height: 48dvh; overflow-y: auto; padding: 10px 12px; }
+    .sentence-page #imageGrid { padding: 16px 12px 50dvh; }
+    .sentence-workspace > div:last-child,
+    .sentence-workspace > div:last-child > div:first-child { width: 100%; }
+    .sentence-workspace #customText { width: 100%; min-width: 0; }
     .sentence-page .app-header {
         height: auto;
         min-height: 55px;
         padding-block: 8px;
         flex-wrap: wrap;
     }
+}
+
+@media (max-width: 760px) and (max-height: 500px) {
+    .studio-page .sidebar { max-height: 36dvh; }
 }
 
 @media (prefers-reduced-motion: reduce) {

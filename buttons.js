@@ -14,6 +14,7 @@ const ctx = drawing.getContext("2d");
 const toolCursor = document.getElementById("toolCursor");
 
 let isDrawing = false;
+let drawingPointerId = null;
 let lineWidth = 3;
 let strokeColor = "#202421";
 
@@ -84,26 +85,57 @@ async function init() {
 
 function resizeCanvas() {
     const rect = canvas.getBoundingClientRect();
-    drawing.width = rect.width;
-    drawing.height = rect.height;
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    // Preserve existing marks across mobile browser chrome and orientation resizes.
+    const snapshot = document.createElement('canvas');
+    snapshot.width = drawing.width;
+    snapshot.height = drawing.height;
+    if (drawing.width && drawing.height) {
+        snapshot.getContext('2d').drawImage(drawing, 0, 0);
+    }
+
+    drawing.width = Math.round(rect.width);
+    drawing.height = Math.round(rect.height);
     ctx.imageSmoothingEnabled = true;
+
+    if (snapshot.width && snapshot.height) {
+        ctx.drawImage(snapshot, 0, 0, snapshot.width, snapshot.height, 0, 0, drawing.width, drawing.height);
+    }
+
+    keepCardsInsideCanvas();
 }
 
 function setupDrawingEvents() {
     drawing.addEventListener('pointerdown', (e) => {
+        if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+        e.preventDefault();
         isDrawing = true;
-        const rect = drawing.getBoundingClientRect();
+        drawingPointerId = e.pointerId;
+        drawing.setPointerCapture(e.pointerId);
+        const point = getCanvasPoint(e);
         ctx.beginPath();
-        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+        ctx.moveTo(point.x, point.y);
     });
 
-    drawing.addEventListener('pointerup', () => {
+    const finishDrawing = (e) => {
+        if (drawingPointerId !== e.pointerId) return;
         isDrawing = false;
+        drawingPointerId = null;
         ctx.beginPath();
-    });
+        if (drawing.hasPointerCapture(e.pointerId)) {
+            drawing.releasePointerCapture(e.pointerId);
+        }
+    };
 
-    drawing.addEventListener('pointerleave', () => {
+    drawing.addEventListener('pointerup', finishDrawing);
+    drawing.addEventListener('pointercancel', finishDrawing);
+
+    drawing.addEventListener('pointerleave', (e) => {
+        // A captured touch/pen pointer can safely continue outside the element.
+        if (drawingPointerId === e.pointerId && drawing.hasPointerCapture(e.pointerId)) return;
         isDrawing = false;
+        drawingPointerId = null;
         ctx.beginPath();
         hideToolCursor();
     });
@@ -111,11 +143,12 @@ function setupDrawingEvents() {
     drawing.addEventListener('pointermove', (e) => {
         updateToolCursorPosition(e);
 
-        if (!isDrawing) return;
+        if (!isDrawing || drawingPointerId !== e.pointerId) return;
+        e.preventDefault();
 
-        const rect = drawing.getBoundingClientRect();
-        const currentX = e.clientX - rect.left;
-        const currentY = e.clientY - rect.top;
+        const point = getCanvasPoint(e);
+        const currentX = point.x;
+        const currentY = point.y;
 
         if (removeMode) {
             ctx.save();
@@ -256,6 +289,14 @@ function setHexColor(hex) {
     });
 }
 
+function getCanvasPoint(e) {
+    const rect = drawing.getBoundingClientRect();
+    return {
+        x: (e.clientX - rect.left) * (drawing.width / rect.width),
+        y: (e.clientY - rect.top) * (drawing.height / rect.height)
+    };
+}
+
 function clearAll() {
     const images = canvas.querySelectorAll('.move');
     images.forEach(img => img.remove());
@@ -271,10 +312,6 @@ function addImageToCanvas(button) {
     const moveDiv = document.createElement('div');
     moveDiv.className = 'move rounded-lg border bg-white flex flex-col items-center justify-between p-1';
     moveDiv.id = `Moveable${count}`;
-
-    const canvasRect = canvas.getBoundingClientRect();
-    moveDiv.style.left = `${canvasRect.width / 2 - 100}px`;
-    moveDiv.style.top = `${canvasRect.height / 2 - 75}px`;
 
     if (button.id === "buttoncustom") {
         moveDiv.classList.add('resizable-note');
@@ -313,16 +350,19 @@ function addImageToCanvas(button) {
         moveDiv.appendChild(soundBtn);
     }
 
-    moveDiv.style.touchAction = "none";
     canvas.appendChild(moveDiv);
+    const canvasRect = canvas.getBoundingClientRect();
+    const moveRect = moveDiv.getBoundingClientRect();
+    moveDiv.style.left = `${Math.max(0, (canvasRect.width - moveRect.width) / 2)}px`;
+    moveDiv.style.top = `${Math.max(0, (canvasRect.height - moveRect.height) / 2)}px`;
     setupImageBehavior(moveDiv);
     count++;
 }
 
 function setupImageBehavior(element) {
     element.onpointerdown = null;
-    element.touchAction = null;
     if (removeMode) {
+        element.style.touchAction = 'manipulation';
         element.classList.remove('drag-mode');
         element.classList.add('remove-mode');
         element.onpointerdown = (e) => {
@@ -332,6 +372,7 @@ function setupImageBehavior(element) {
             }
         };
     } else {
+        element.style.touchAction = 'none';
         element.classList.remove('remove-mode');
         element.classList.add('drag-mode');
         element.onpointerdown = (e) => startDrag(e, element);
@@ -347,6 +388,8 @@ function startDrag(e, element) {
     if (e.target.classList.contains('sound') || e.target.classList.contains('customtext')) {
         return;
     }
+
+    if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
 
     e.preventDefault();
     element.setPointerCapture(e.pointerId);
@@ -389,6 +432,17 @@ function startDrag(e, element) {
     element.addEventListener('pointermove', onMove);
     element.addEventListener('pointerup', onEnd);
     element.addEventListener('pointercancel', onEnd);
+}
+
+function keepCardsInsideCanvas() {
+    const canvasRect = canvas.getBoundingClientRect();
+    canvas.querySelectorAll('.move').forEach(element => {
+        const elementRect = element.getBoundingClientRect();
+        const currentX = parseFloat(element.style.left) || 0;
+        const currentY = parseFloat(element.style.top) || 0;
+        element.style.left = `${Math.max(0, Math.min(currentX, canvasRect.width - elementRect.width))}px`;
+        element.style.top = `${Math.max(0, Math.min(currentY, canvasRect.height - elementRect.height))}px`;
+    });
 }
 
 function handleSoundButton(e) {
@@ -467,6 +521,8 @@ function setupCustomCardModal() {
     if (cropCanvas) {
         cropCanvas.addEventListener('pointerdown', (e) => {
             if (!rawUploadedImage) return;
+            if (!e.isPrimary || (e.pointerType === 'mouse' && e.button !== 0)) return;
+            e.preventDefault();
             isCroppingDrag = true;
             cropCanvas.setPointerCapture(e.pointerId);
             startCropDragX = e.clientX - cropPanX;
@@ -475,6 +531,7 @@ function setupCustomCardModal() {
 
         cropCanvas.addEventListener('pointermove', (e) => {
             if (!isCroppingDrag) return;
+            e.preventDefault();
             cropPanX = e.clientX - startCropDragX;
             cropPanY = e.clientY - startCropDragY;
             renderCropPreview();
