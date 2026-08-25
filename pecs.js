@@ -45,7 +45,14 @@ async function reloadCardLibrary(preferredCategory = categorySelect.value) {
 }
 
 async function removeCard(cardId) {
-    if (!confirm('Are you sure you want to remove this card?')) return;
+    const card = allCards.find(item => item.id === cardId);
+    const confirmed = await PecsDialog.confirm({
+        title: `Delete “${card ? card.name : "this card"}”?`,
+        message: "This card will be permanently removed from the active profile.",
+        confirmLabel: "Delete card",
+        tone: "danger"
+    });
+    if (!confirmed) return;
 
     try {
         await PecsLibrary.saveAllCards(
@@ -53,7 +60,11 @@ async function removeCard(cardId) {
         );
     } catch (error) {
         console.error('Error updating the active profile database:', error);
-        alert('The card could not be removed from the active profile database.');
+        await PecsDialog.notice({
+            title: "Card could not be deleted",
+            message: "The active profile database could not be updated.",
+            tone: "danger"
+        });
         return;
     }
 
@@ -154,7 +165,15 @@ function removeFromSentence(id, element) {
 
 // UTILITIES
 categorySelect.addEventListener("change", () => renderImages(categorySelect.value));
-clearBtn.addEventListener("click", () => {
+clearBtn.addEventListener("click", async () => {
+    if (sentenceWords.length === 0) return;
+    const confirmed = await PecsDialog.confirm({
+        title: "Clear the whole sentence?",
+        message: "Every card and custom word in the sentence strip will be removed.",
+        confirmLabel: "Clear sentence",
+        tone: "danger"
+    });
+    if (!confirmed) return;
     sentenceStrip.innerHTML = "";
     sentenceWords = [];
     stopSentencePlayback();

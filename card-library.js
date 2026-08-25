@@ -1,4 +1,126 @@
 (function () {
+    let activeDialog = null;
+
+    function ensureDialog() {
+        let overlay = document.getElementById("appActionPage");
+        if (overlay) return overlay;
+
+        overlay = document.createElement("div");
+        overlay.id = "appActionPage";
+        overlay.className = "modal-overlay action-dialog-overlay hidden";
+        overlay.setAttribute("role", "dialog");
+        overlay.setAttribute("aria-modal", "true");
+        overlay.setAttribute("aria-labelledby", "appActionTitle");
+        overlay.setAttribute("aria-describedby", "appActionMessage");
+        overlay.innerHTML = `
+            <section class="modal-content action-dialog-content flex flex-col gap-4">
+                <div class="action-dialog-header">
+                    <h3 id="appActionTitle"></h3>
+                </div>
+                <p id="appActionMessage" class="action-page-message"></p>
+                <label id="appActionInputLabel" class="action-page-input-wrap hidden">
+                    <span></span>
+                    <input id="appActionInput" type="text" autocomplete="off">
+                </label>
+                <div class="action-page-actions">
+                    <button id="appActionCancel" type="button" class="quiet-button">Cancel</button>
+                    <button id="appActionConfirm" type="button" class="quiet-button primary">Continue</button>
+                </div>
+            </section>`;
+        document.body.appendChild(overlay);
+        return overlay;
+    }
+
+    function openDialog(options) {
+        if (activeDialog) activeDialog(false);
+
+        const overlay = ensureDialog();
+        const card = overlay.querySelector(".action-dialog-content");
+        const title = document.getElementById("appActionTitle");
+        const message = document.getElementById("appActionMessage");
+        const inputWrap = document.getElementById("appActionInputLabel");
+        const inputLabel = inputWrap.querySelector("span");
+        const input = document.getElementById("appActionInput");
+        const cancelButton = document.getElementById("appActionCancel");
+        const confirmButton = document.getElementById("appActionConfirm");
+        const previousFocus = document.activeElement;
+        const hasInput = options.input !== undefined;
+        const cancelable = options.cancelable !== false;
+
+        title.textContent = options.title || "Are you sure?";
+        message.textContent = options.message || "";
+        card.dataset.tone = options.tone || "default";
+        inputWrap.classList.toggle("hidden", !hasInput);
+        inputLabel.textContent = options.inputLabel || "Name";
+        input.value = hasInput ? String(options.input || "") : "";
+        input.placeholder = options.inputPlaceholder || "";
+        cancelButton.classList.toggle("hidden", !cancelable);
+        cancelButton.textContent = options.cancelLabel || "Cancel";
+        confirmButton.textContent = options.confirmLabel || "Continue";
+        confirmButton.classList.toggle("danger", options.tone === "danger");
+        overlay.classList.remove("hidden");
+        document.body.classList.add("action-page-open");
+
+        return new Promise(resolve => {
+            const close = confirmed => {
+                if (!activeDialog) return;
+                overlay.classList.add("hidden");
+                document.body.classList.remove("action-page-open");
+                document.removeEventListener("keydown", onKeyDown);
+                cancelButton.removeEventListener("click", onCancel);
+                confirmButton.removeEventListener("click", onConfirm);
+                overlay.removeEventListener("pointerdown", onBackdrop);
+                activeDialog = null;
+                if (previousFocus && typeof previousFocus.focus === "function") previousFocus.focus();
+                resolve(hasInput ? (confirmed ? input.value.trim() : null) : confirmed);
+            };
+            const onCancel = () => close(false);
+            const onConfirm = () => {
+                if (hasInput && !input.value.trim()) {
+                    input.focus();
+                    input.setAttribute("aria-invalid", "true");
+                    return;
+                }
+                close(true);
+            };
+            const onBackdrop = event => {
+                if (cancelable && event.target === overlay) close(false);
+            };
+            const onKeyDown = event => {
+                if (event.key === "Escape" && cancelable) close(false);
+                if (event.key === "Enter" && hasInput && document.activeElement === input) onConfirm();
+                if (event.key === "Tab") {
+                    const focusable = [hasInput ? input : null, cancelable ? cancelButton : null, confirmButton].filter(Boolean);
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+                    if (event.shiftKey && document.activeElement === first) {
+                        event.preventDefault();
+                        last.focus();
+                    } else if (!event.shiftKey && document.activeElement === last) {
+                        event.preventDefault();
+                        first.focus();
+                    }
+                }
+            };
+
+            activeDialog = close;
+            cancelButton.addEventListener("click", onCancel);
+            confirmButton.addEventListener("click", onConfirm);
+            overlay.addEventListener("pointerdown", onBackdrop);
+            document.addEventListener("keydown", onKeyDown);
+            input.removeAttribute("aria-invalid");
+            requestAnimationFrame(() => (hasInput ? input : confirmButton).focus());
+        });
+    }
+
+    window.PecsDialog = Object.freeze({
+        confirm: options => openDialog({ ...options, cancelable: true }),
+        prompt: options => openDialog({ ...options, cancelable: true, input: options.value || "" }),
+        notice: options => openDialog({ ...options, cancelable: false, confirmLabel: options.confirmLabel || "Done" })
+    });
+})();
+
+(function () {
     const STORAGE_KEY = "pecs_custom_cards";
     const DATABASE_NAME = "great_and_small_pecs";
     const DATABASE_STORE = "profile_data";
@@ -594,7 +716,30 @@
     }
 
     async function exportProfile(profileName) {
-        const name = profileName.trim() || "PECS Profile";
+        let name = profileName.trim() || "PECS Profile";
+        const suggestedFileName = `${safeFileName(name)}.pecs-profile.zip`;
+        let saveHandle = null;
+
+        if (window.isSecureContext && "showSaveFilePicker" in window) {
+            try {
+                saveHandle = await window.showSaveFilePicker({
+                    suggestedName: suggestedFileName,
+                    types: [{
+                        description: "PECS profile",
+                        accept: { [ZIP_MIME_TYPE]: [".zip"] }
+                    }]
+                });
+                const selectedName = saveHandle.name
+                    .replace(/\.pecs-profile\.zip$/i, "")
+                    .replace(/\.zip$/i, "")
+                    .trim();
+                if (selectedName) name = selectedName;
+            } catch (error) {
+                if (error && error.name === "AbortError") return null;
+                throw error;
+            }
+        }
+
         const [storedCards, categorySettings] = await Promise.all([
             getAllCards(),
             getCategorySettings()
@@ -644,14 +789,20 @@
         entries.unshift({ name: "profile.json", data: textEncoder.encode(JSON.stringify(profile, null, 2)) });
 
         const blob = new Blob([createZip(entries)], { type: ZIP_MIME_TYPE });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `${safeFileName(name)}.pecs-profile.zip`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.setTimeout(() => URL.revokeObjectURL(url), 0);
+        if (saveHandle) {
+            const writable = await saveHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+        } else {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = suggestedFileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => URL.revokeObjectURL(url), 0);
+        }
         return { profile, cardCount: storedCards.length };
     }
 
@@ -759,14 +910,15 @@
 
         exportButton.addEventListener("click", async () => {
             const suggestedName = `PECS Profile ${new Date().toLocaleDateString()}`;
-            const profileName = window.prompt("Name this PECS profile:", suggestedName);
-            if (profileName === null) return;
             exportButton.disabled = true;
             try {
-                const result = await exportProfile(profileName);
-                window.alert(`Exported “${result.profile.name}” with ${result.cardCount} card(s).`);
+                await exportProfile(suggestedName);
             } catch (error) {
-                window.alert(error.message || "The ZIP profile could not be exported.");
+                await PecsDialog.notice({
+                    title: "Profile could not be exported",
+                    message: error.message || "The ZIP profile could not be exported.",
+                    tone: "danger"
+                });
             } finally {
                 exportButton.disabled = false;
             }
@@ -780,7 +932,13 @@
         fileInput.addEventListener("change", async () => {
             const file = fileInput.files && fileInput.files[0];
             if (!file) return;
-            if (!window.confirm("Importing this profile will completely replace the current cards and category organization on both pages. Continue?")) {
+            const confirmed = await PecsDialog.confirm({
+                title: "Replace the current profile?",
+                message: `Importing “${file.name}” will replace the cards and category organization on both pages.`,
+                confirmLabel: "Replace and import",
+                tone: "danger"
+            });
+            if (!confirmed) {
                 fileInput.value = "";
                 return;
             }
@@ -788,9 +946,12 @@
             try {
                 const result = await importProfile(file);
                 if (typeof options.onImported === "function") await options.onImported(result);
-                window.alert(`Imported “${result.profile.name || "PECS Profile"}” with ${result.cards.length} card(s).`);
             } catch (error) {
-                window.alert(error.message || "The profile could not be imported.");
+                await PecsDialog.notice({
+                    title: "Profile could not be imported",
+                    message: error.message || "The selected profile could not be imported.",
+                    tone: "danger"
+                });
             } finally {
                 fileInput.value = "";
             }

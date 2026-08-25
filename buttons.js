@@ -7,6 +7,7 @@ let activeElement = null;
 const clearBtn = document.getElementById("cl");
 const removeBtn = document.getElementById("rm");
 const drawBtn = document.getElementById("drawset");
+const exportBoardBtn = document.getElementById("exportBoardBtn");
 const activeToolBadge = document.getElementById("activeToolBadge");
 const canvas = document.getElementById("canvas");
 const drawing = document.getElementById("draw");
@@ -68,6 +69,7 @@ async function init() {
     window.addEventListener('resize', resizeCanvas);
 
     clearBtn.addEventListener("click", clearAll);
+    exportBoardBtn.addEventListener("click", exportBoardAsImage);
     removeBtn.addEventListener("click", toggleEraserMode);
     drawBtn.addEventListener("click", toggleDrawMode);
 
@@ -297,10 +299,311 @@ function getCanvasPoint(e) {
     };
 }
 
-function clearAll() {
+async function clearAll() {
+    const confirmed = await PecsDialog.confirm({
+        title: "Clear the entire board?",
+        message: "All cards and drawing marks on the board will be removed.",
+        confirmLabel: "Clear board",
+        tone: "danger"
+    });
+    if (!confirmed) return;
     const images = canvas.querySelectorAll('.move');
     images.forEach(img => img.remove());
     ctx.clearRect(0, 0, drawing.width, drawing.height);
+}
+
+async function exportBoardAsImage() {
+    const originalLabel = exportBoardBtn.textContent;
+    const suggestedFileName = `pecs-board-${formatExportTimestamp(new Date())}.png`;
+    exportBoardBtn.disabled = true;
+    exportBoardBtn.textContent = 'Creating image...';
+
+    try {
+        let saveHandle = null;
+        if (window.isSecureContext && "showSaveFilePicker" in window) {
+            try {
+                saveHandle = await window.showSaveFilePicker({
+                    suggestedName: suggestedFileName,
+                    types: [{
+                        description: "PNG image",
+                        accept: { "image/png": [".png"] }
+                    }]
+                });
+            } catch (error) {
+                if (error && error.name === "AbortError") return;
+                throw error;
+            }
+        }
+
+        const boardRect = canvas.getBoundingClientRect();
+        if (boardRect.width <= 0 || boardRect.height <= 0) {
+            throw new Error('The board is not currently visible.');
+        }
+
+        // Render at twice the displayed size so cards and text stay crisp when printed.
+        const exportScale = 2;
+        const imageCanvas = document.createElement('canvas');
+        imageCanvas.width = Math.round(boardRect.width * exportScale);
+        imageCanvas.height = Math.round(boardRect.height * exportScale);
+
+        const imageContext = imageCanvas.getContext('2d');
+        imageContext.scale(exportScale, exportScale);
+        imageContext.fillStyle = getComputedStyle(canvas).backgroundColor || '#ffffff';
+        imageContext.fillRect(0, 0, boardRect.width, boardRect.height);
+        imageContext.drawImage(drawing, 0, 0, drawing.width, drawing.height, 0, 0, boardRect.width, boardRect.height);
+
+        for (const card of canvas.querySelectorAll('.move')) {
+            await drawCardForExport(imageContext, card, boardRect);
+        }
+
+        const blob = await canvasToBlob(imageCanvas);
+        if (saveHandle) {
+            const writable = await saveHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+        } else {
+            const downloadUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = suggestedFileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+        }
+    } catch (error) {
+        console.error('Board image export failed:', error);
+        await PecsDialog.notice({
+            title: "Board could not be exported",
+            message: error.message || 'The board image could not be exported.',
+            tone: "danger"
+        });
+    } finally {
+        exportBoardBtn.disabled = false;
+        exportBoardBtn.textContent = originalLabel;
+    }
+}
+
+async function drawCardForExport(imageContext, card, boardRect) {
+    const cardRect = card.getBoundingClientRect();
+    const x = cardRect.left - boardRect.left;
+    const y = cardRect.top - boardRect.top;
+    const width = cardRect.width;
+    const height = cardRect.height;
+
+    imageContext.save();
+    roundedRectPath(imageContext, x, y, width, height, 8);
+    imageContext.clip();
+    imageContext.fillStyle = '#ffffff';
+    imageContext.fillRect(x, y, width, height);
+
+    const note = card.querySelector('.customtext');
+    if (note) {
+        drawNoteForExport(imageContext, note, boardRect);
+    } else {
+        const image = card.querySelector('img');
+        if (image) await drawContainedImageForExport(imageContext, image, boardRect);
+
+        const label = card.querySelector('span');
+        if (label) drawLabelForExport(imageContext, label, boardRect);
+
+        const soundButton = card.querySelector('.sound');
+        if (soundButton) await drawSoundButtonForExport(imageContext, soundButton, boardRect);
+    }
+    imageContext.restore();
+
+    imageContext.save();
+    imageContext.strokeStyle = getComputedStyle(card).borderColor || '#b8c0b5';
+    imageContext.lineWidth = 1;
+    roundedRectPath(imageContext, x + 0.5, y + 0.5, width - 1, height - 1, 8);
+    imageContext.stroke();
+    imageContext.restore();
+}
+
+async function drawContainedImageForExport(imageContext, image, boardRect) {
+    await waitForImage(image);
+    if (!image.naturalWidth || !image.naturalHeight) return;
+
+    const rect = image.getBoundingClientRect();
+    const x = rect.left - boardRect.left;
+    const y = rect.top - boardRect.top;
+    const imageRatio = image.naturalWidth / image.naturalHeight;
+    const boxRatio = rect.width / rect.height;
+    let drawWidth = rect.width;
+    let drawHeight = rect.height;
+
+    if (imageRatio > boxRatio) {
+        drawHeight = drawWidth / imageRatio;
+    } else {
+        drawWidth = drawHeight * imageRatio;
+    }
+
+    imageContext.save();
+    roundedRectPath(imageContext, x, y, rect.width, rect.height, 14);
+    imageContext.clip();
+    imageContext.fillStyle = '#ffffff';
+    imageContext.fillRect(x, y, rect.width, rect.height);
+    imageContext.drawImage(
+        image,
+        x + (rect.width - drawWidth) / 2,
+        y + (rect.height - drawHeight) / 2,
+        drawWidth,
+        drawHeight
+    );
+    imageContext.restore();
+}
+
+function drawLabelForExport(imageContext, label, boardRect) {
+    const rect = label.getBoundingClientRect();
+    const style = getComputedStyle(label);
+    const fontSize = parseFloat(style.fontSize) || 12;
+    const x = rect.left - boardRect.left;
+    const y = rect.top - boardRect.top;
+
+    imageContext.save();
+    imageContext.fillStyle = style.color || '#1f2937';
+    imageContext.font = `${style.fontWeight || 700} ${fontSize}px ${style.fontFamily || 'Arial'}`;
+    imageContext.textAlign = 'center';
+    imageContext.textBaseline = 'middle';
+    imageContext.fillText(truncateCanvasText(imageContext, label.textContent, rect.width), x + rect.width / 2, y + rect.height / 2, rect.width);
+    imageContext.restore();
+}
+
+function drawNoteForExport(imageContext, note, boardRect) {
+    const rect = note.getBoundingClientRect();
+    const style = getComputedStyle(note);
+    const fontSize = parseFloat(style.fontSize) || 16;
+    const lineHeight = Number.parseFloat(style.lineHeight) || fontSize * 1.2;
+    const paddingX = parseFloat(style.paddingLeft) || 8;
+    const paddingY = parseFloat(style.paddingTop) || 8;
+    const maxWidth = Math.max(0, rect.width - paddingX * 2);
+    const maxY = rect.top - boardRect.top + rect.height - paddingY;
+    const text = note.value || note.placeholder || '';
+
+    imageContext.save();
+    imageContext.beginPath();
+    imageContext.rect(rect.left - boardRect.left, rect.top - boardRect.top, rect.width, rect.height);
+    imageContext.clip();
+    imageContext.fillStyle = note.value ? (style.color || '#000000') : '#6b7280';
+    imageContext.font = `${style.fontWeight || 600} ${fontSize}px ${style.fontFamily || 'Arial'}`;
+    imageContext.textAlign = 'center';
+    imageContext.textBaseline = 'top';
+
+    let lineY = rect.top - boardRect.top + paddingY;
+    for (const line of wrapCanvasText(imageContext, text, maxWidth)) {
+        if (lineY + lineHeight > maxY) break;
+        imageContext.fillText(line, rect.left - boardRect.left + rect.width / 2, lineY, maxWidth);
+        lineY += lineHeight;
+    }
+    imageContext.restore();
+}
+
+async function drawSoundButtonForExport(imageContext, soundButton, boardRect) {
+    const rect = soundButton.getBoundingClientRect();
+    const x = rect.left - boardRect.left;
+    const y = rect.top - boardRect.top;
+
+    imageContext.save();
+    imageContext.fillStyle = 'rgba(32, 36, 33, 0.75)';
+    imageContext.strokeStyle = '#ffffff';
+    imageContext.lineWidth = 1;
+    imageContext.beginPath();
+    imageContext.arc(x + rect.width / 2, y + rect.height / 2, Math.max(0, rect.width / 2 - 0.5), 0, Math.PI * 2);
+    imageContext.fill();
+    imageContext.stroke();
+
+    const iconUrl = getCssBackgroundImageUrl(getComputedStyle(soundButton).backgroundImage);
+    if (iconUrl) {
+        const icon = new Image();
+        icon.src = iconUrl;
+        await waitForImage(icon);
+        if (icon.naturalWidth) {
+            const iconSize = Math.min(17, rect.width - 6, rect.height - 6);
+            imageContext.drawImage(icon, x + (rect.width - iconSize) / 2, y + (rect.height - iconSize) / 2, iconSize, iconSize);
+        }
+    }
+    imageContext.restore();
+}
+
+function roundedRectPath(context, x, y, width, height, radius) {
+    const safeRadius = Math.max(0, Math.min(radius, width / 2, height / 2));
+    context.beginPath();
+    context.moveTo(x + safeRadius, y);
+    context.lineTo(x + width - safeRadius, y);
+    context.arcTo(x + width, y, x + width, y + safeRadius, safeRadius);
+    context.lineTo(x + width, y + height - safeRadius);
+    context.arcTo(x + width, y + height, x + width - safeRadius, y + height, safeRadius);
+    context.lineTo(x + safeRadius, y + height);
+    context.arcTo(x, y + height, x, y + height - safeRadius, safeRadius);
+    context.lineTo(x, y + safeRadius);
+    context.arcTo(x, y, x + safeRadius, y, safeRadius);
+    context.closePath();
+}
+
+function wrapCanvasText(context, text, maxWidth) {
+    const lines = [];
+    String(text).split(/\r?\n/).forEach(paragraph => {
+        const words = paragraph.split(/\s+/).filter(Boolean);
+        if (!words.length) {
+            lines.push('');
+            return;
+        }
+
+        let line = words.shift();
+        words.forEach(word => {
+            const candidate = `${line} ${word}`;
+            if (context.measureText(candidate).width <= maxWidth) {
+                line = candidate;
+            } else {
+                lines.push(line);
+                line = word;
+            }
+        });
+        lines.push(line);
+    });
+    return lines;
+}
+
+function truncateCanvasText(context, text, maxWidth) {
+    const value = String(text || '');
+    if (context.measureText(value).width <= maxWidth) return value;
+
+    let shortened = value;
+    while (shortened && context.measureText(`${shortened}…`).width > maxWidth) {
+        shortened = shortened.slice(0, -1);
+    }
+    return `${shortened}…`;
+}
+
+function waitForImage(image) {
+    if (image.complete) return Promise.resolve();
+    return new Promise(resolve => {
+        image.addEventListener('load', resolve, { once: true });
+        image.addEventListener('error', resolve, { once: true });
+    });
+}
+
+function getCssBackgroundImageUrl(backgroundImage) {
+    const match = /^url\(["']?(.*?)["']?\)$/.exec(backgroundImage || '');
+    return match ? match[1] : '';
+}
+
+function canvasToBlob(sourceCanvas) {
+    return new Promise((resolve, reject) => {
+        sourceCanvas.toBlob(blob => {
+            if (blob) resolve(blob);
+            else reject(new Error('The browser could not create a PNG image.'));
+        }, 'image/png');
+    });
+}
+
+function formatExportTimestamp(date) {
+    const pad = value => String(value).padStart(2, '0');
+    return [
+        date.getFullYear(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate())
+    ].join('-') + `-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
 
 function attachInitialCardListeners() {
@@ -625,17 +928,26 @@ function clearCategoryManagerError() {
 }
 
 async function resetLibraryToDefaults() {
-    if (!window.confirm("Reset every card and category to the original defaults? Imported and custom cards will be removed.")) return;
+    const confirmed = await PecsDialog.confirm({
+        title: "Restore the original library?",
+        message: "Imported and custom cards will be removed, and every category will return to its original setup.",
+        confirmLabel: "Reset library",
+        tone: "danger"
+    });
+    if (!confirmed) return;
     resetDefaultsBtn.disabled = true;
     try {
         await PecsLibrary.resetToDefaults();
         await reloadCardLibrary();
         await populateCardCategoryOptions();
         if (!categoryManagerModal.classList.contains("hidden")) await renderCategoryManager();
-        window.alert("The original default cards and categories have been restored.");
     } catch (error) {
         console.error("Failed resetting the card library:", error);
-        window.alert("The card library could not be reset.");
+        await PecsDialog.notice({
+            title: "Library could not be restored",
+            message: "Your current library was not changed. Please try again.",
+            tone: "danger"
+        });
     } finally {
         resetDefaultsBtn.disabled = false;
     }
@@ -712,7 +1024,13 @@ async function renameCategory(oldName, newName, cards, settings) {
 }
 
 async function deleteCategory(category, settings) {
-    if (!window.confirm(`Delete the empty “${category}” category?`)) return;
+    const confirmed = await PecsDialog.confirm({
+        title: `Delete “${category}”?`,
+        message: "This empty category will be permanently removed from the library.",
+        confirmLabel: "Delete category",
+        tone: "danger"
+    });
+    if (!confirmed) return;
     settings.categories = settings.categories.filter(name => name !== category);
     settings.assignments = {};
     await applyCategorySettings(settings);
@@ -879,7 +1197,11 @@ function saveCustomCard() {
     if (cropCanvas.width > 0 && !cropArea.classList.contains('hidden')) {
         croppedImageDataUrl = cropCanvas.toDataURL('image/jpeg', 0.85);
     } else {
-        alert('Please upload an image for the custom card.');
+        PecsDialog.notice({
+            title: "Add a picture first",
+            message: "Choose and crop an image before saving this custom card.",
+            tone: "danger"
+        });
         return;
     }
 
@@ -910,7 +1232,11 @@ async function createAndStoreCustomCard(name, category, image, audio) {
         await PecsLibrary.saveAllCards(cards.concat(cardData));
     } catch(e) {
         console.error('Failed saving custom card:', e);
-        alert('The card could not be saved to the active profile database.');
+        await PecsDialog.notice({
+            title: "Card could not be saved",
+            message: "The active profile database could not be updated.",
+            tone: "danger"
+        });
         return;
     }
 
@@ -919,7 +1245,14 @@ async function createAndStoreCustomCard(name, category, image, audio) {
 }
 
 async function removeCard(cardId) {
-    if (!confirm('Are you sure you want to remove this card?')) return;
+    const card = (await PecsLibrary.getAllCards()).find(item => item.id === cardId);
+    const confirmed = await PecsDialog.confirm({
+        title: `Delete “${card ? card.name : "this card"}”?`,
+        message: "This card will be permanently removed from the active profile.",
+        confirmLabel: "Delete card",
+        tone: "danger"
+    });
+    if (!confirmed) return;
 
     try {
         await PecsLibrary.saveAllCards(
@@ -927,7 +1260,11 @@ async function removeCard(cardId) {
         );
     } catch(e) {
         console.error('Error removing the card from the active profile database:', e);
-        alert('The card could not be removed from the active profile database.');
+        await PecsDialog.notice({
+            title: "Card could not be deleted",
+            message: "The active profile database could not be updated.",
+            tone: "danger"
+        });
         return;
     }
 
